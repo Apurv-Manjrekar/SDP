@@ -76,14 +76,14 @@ def uci_adult_aggregations_test(data, num_trials, epsilon):
             "Mean Capital Gain for Age 36",
             "Mean Capital Gain for Age 36 and Education 4+",
         ],
-        "Normal": [0] * 4,
+        "Baseline": [0] * 4,
         "Differentially Private": [0] * 4,
     }
 
-    results["Normal"][0] = base_avg_mean_age / num_trials
-    results["Normal"][1] = base_avg_capital_gain / num_trials
-    results["Normal"][2] = base_avg_capital_gain_age_36 / num_trials
-    results["Normal"][3] = base_avg_capital_gain_age_36_education_4 / num_trials
+    results["Baseline"][0] = base_avg_mean_age / num_trials
+    results["Baseline"][1] = base_avg_capital_gain / num_trials
+    results["Baseline"][2] = base_avg_capital_gain_age_36 / num_trials
+    results["Baseline"][3] = base_avg_capital_gain_age_36_education_4 / num_trials
 
     results["Differentially Private"][0] = dp_avg_mean_age / num_trials
     results["Differentially Private"][1] = dp_avg_capital_gain / num_trials
@@ -138,14 +138,14 @@ def kaggle_healthcare_aggregations_test(data, num_trials, epsilon):
             "Mean Billing Amount for Age 38",
             "Mean Billing Amount for Age 38 and Diabetes",
         ],
-        "Normal": [0] * 4,
+        "Baseline": [0] * 4,
         "Differentially Private": [0] * 4,
     }
 
-    results["Normal"][0] = base_avg_mean_age / num_trials
-    results["Normal"][1] = base_avg_billing_amount / num_trials
-    results["Normal"][2] = base_avg_billing_amount_age_38 / num_trials
-    results["Normal"][3] = base_avg_billing_amount_age_38_diabetes / num_trials
+    results["Baseline"][0] = base_avg_mean_age / num_trials
+    results["Baseline"][1] = base_avg_billing_amount / num_trials
+    results["Baseline"][2] = base_avg_billing_amount_age_38 / num_trials
+    results["Baseline"][3] = base_avg_billing_amount_age_38_diabetes / num_trials
 
     results["Differentially Private"][0] = dp_avg_mean_age / num_trials
     results["Differentially Private"][1] = dp_avg_billing_amount / num_trials
@@ -160,7 +160,7 @@ def kaggle_healthcare_aggregations_test(data, num_trials, epsilon):
 if __name__ == '__main__':
     uci_adult_data, _, _ = load_uci_adult_dataset()
     for epsilon in [0.001, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 1000]:
-        uci_adult_aggregations_test(uci_adult_data, 5, epsilon)
+        uci_adult_aggregations_test(uci_adult_data, 10, epsilon)
     heatlhcare_data = load_kaggle_healthcare_dataset()
     for epsilon in [0.001, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 1000]:
-        kaggle_healthcare_aggregations_test(heatlhcare_data, 5, epsilon)
+        kaggle_healthcare_aggregations_test(heatlhcare_data, 10, epsilon)

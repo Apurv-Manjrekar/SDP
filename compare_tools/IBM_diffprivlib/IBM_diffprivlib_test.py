@@ -7,6 +7,8 @@ from diffprivlib.models import LogisticRegression
 from sklearn.linear_model import LogisticRegression as base_LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def load_uci_adult_dataset():
@@ -30,12 +32,25 @@ def load_uci_adult_dataset():
     print(data.head())
     print(data.shape)
     
-    return data
+    return data, data[features], data["income_binary"]
 
-def logistic_regression_test(data, num_trials, epsilon):
-    X = data[["age", "education-num", "hours-per-week", "capital-gain", "capital-loss"]]
-    y = data["income_binary"]
+def load_kaggle_healthcare_dataset():
+    healthcare_df = df = pd.read_csv('/home/apurv/Github/SDP/compare_tools/kaggle_healthcare_dataset/healthcare_dataset.csv')
+    healthcare_df.dropna(inplace=True)
+    healthcare_df['Billing Amount'] = healthcare_df['Billing Amount'].astype(int)
+    healthcare_df['Gender Binary'] = LabelEncoder().fit_transform(healthcare_df["Gender"])
+    healthcare_df['Medical Condition Binary'] = LabelEncoder().fit_transform(healthcare_df["Medical Condition"])
+    healthcare_df['Admission Type Binary'] = LabelEncoder().fit_transform(healthcare_df["Admission Type"])
+    healthcare_df['Medication Binary'] = LabelEncoder().fit_transform(healthcare_df["Medication"])
+    healthcare_df['Test Results Binary'] = LabelEncoder().fit_transform(healthcare_df["Test Results"])
+    features = ["Age", "Gender Binary", "Medical Condition Binary", "Admission Type Binary", "Medication Binary", "Billing Amount"]
+    target = ["Test Results Binary"]
+    healthcare_df = healthcare_df[features + target]
+    print(healthcare_df.head())
+    print(healthcare_df.shape)
+    return healthcare_df, healthcare_df[features], healthcare_df[target]
 
+def logistic_regression_test(X, y, num_trials, epsilon):
     base_model_avg_time = 0
     dp_model_avg_time = 0
     base_model_avg_accuracy = 0
@@ -70,20 +85,29 @@ def logistic_regression_test(data, num_trials, epsilon):
         base_model_avg_accuracy += base_model_accuracy
         dp_model_avg_accuracy += dp_model_accuracy
     
-    base_model_avg_accuracy /= num_trials
-    dp_model_avg_accuracy /= num_trials
-    base_model_avg_time /= num_trials
-    dp_model_avg_time /= num_trials
+    results = {
+        "Metric": [
+            "Time Taken",
+            "Accuracy"
+        ],
+        "Baseline": [0] * 2,
+        "Differentially Private": [0] * 2,
+    }
 
-    # Display time taken
-    print(f"IBM Diffprivlib DP Logistic Regression Time Taken (Epsilon: {epsilon}):", dp_model_avg_time)
-    print("Base Case Logistic Regression Time Taken:", base_model_avg_time)
+    results["Baseline"][0] = base_model_avg_time / num_trials
+    results["Baseline"][1] = base_model_avg_accuracy / num_trials
 
-    # Evaluate models
-    print(f"IBM Diffprivlib DP Logistic Regression accuracy (Epsilon: {epsilon}):", dp_model_avg_accuracy)
-    print("Base Case Logistic Regression Accuracy:", base_model_avg_accuracy)
+    results["Differentially Private"][0] = dp_model_avg_time / num_trials
+    results["Differentially Private"][1] = dp_model_avg_accuracy / num_trials
+
+    results_df = pd.DataFrame(results)
+    print(f"\nResults (Epsilon: {epsilon}):")
+    print(results_df)
 
 if __name__ == '__main__':
-    data = load_uci_adult_dataset()
-    for epsilon in [0.01, 1, 100]:
-        logistic_regression_test(data, 50, epsilon)
+    _, X, y = load_uci_adult_dataset()
+    for epsilon in [0.001, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 1000]:
+        logistic_regression_test(X, y, 10, epsilon)
+    _, X, y = load_kaggle_healthcare_dataset()
+    for epsilon in [0.001, 0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 1000]:
+        logistic_regression_test(X, y, 10, epsilon)
