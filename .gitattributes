@@ -1,0 +1,2 @@
+*.net.xml filter=lfs diff=lfs merge=lfs -text
+*.trips.xml filter=lfs diff=lfs merge=lfs -text
