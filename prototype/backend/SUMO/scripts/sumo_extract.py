@@ -188,7 +188,6 @@ if __name__ == "__main__":
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
     # ./../configs/
     configs_dir_path = os.path.join(curr_dir_path, "..", "configs/small_map")
-    configs_dir_path = os.path.abspath(configs_dir_path)
     results_dir_path = os.path.join(curr_dir_path, "..", "results")
 
     sumocfg_file = "osm.sumocfg"
