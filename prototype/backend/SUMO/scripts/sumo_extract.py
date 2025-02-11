@@ -86,8 +86,27 @@ def extract_lane_change_data(lane_change_file):
     return pd.DataFrame(lane_changes)
 
 
+def extract_collision_data(collision_file):
+    """
+    Extracts collision data from a SUMO collision output file.
+    """
+    tree = ET.parse(collision_file)
+    root = tree.getroot()
+
+    collisions = []
+    for collision in root.findall("collision"):
+        time = float(collision.get("time"))
+        vehicle_1 = collision.get("vehicle1")
+        vehicle_2 = collision.get("vehicle2")
+
+        collisions.append({'Time': time, 'Vehicle_ID': vehicle_1, 'Collision': True})
+        collisions.append({'Time': time, 'Vehicle_ID': vehicle_2, 'Collision': True})
+
+    return pd.DataFrame(collisions)
+
+
 ### ------------------------------ SIMULATION ------------------------------ ###
-def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100):
+def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicles=None):
     """
     Runs the SUMO simulation and extracts vehicle metrics.
     """
@@ -102,8 +121,11 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100):
         traci.simulationStep()
 
         current_time = float(traci.simulation.getTime())
-        print(f"Time: {current_time}")
+        # print(f"Time: {current_time}")
         vehicle_ids = traci.vehicle.getIDList()
+
+        if vehicles is not None:
+            vehicle_ids = [v for v in vehicle_ids if v in vehicles]
 
         for vehicle_id in vehicle_ids:
             speed = traci.vehicle.getSpeed(vehicle_id)
@@ -137,24 +159,6 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100):
     
     return pd.DataFrame(data_rows)
 
-def extract_collision_data(collision_file):
-    """
-    Extracts collision data from a SUMO collision output file.
-    """
-    tree = ET.parse(collision_file)
-    root = tree.getroot()
-
-    collisions = []
-    for collision in root.findall("collision"):
-        time = float(collision.get("time"))
-        vehicle_1 = collision.get("vehicle1")
-        vehicle_2 = collision.get("vehicle2")
-
-        collisions.append({'Time': time, 'Vehicle_ID': vehicle_1, 'Collision': True})
-        collisions.append({'Time': time, 'Vehicle_ID': vehicle_2, 'Collision': True})
-
-    return pd.DataFrame(collisions)
-
 
 ### ------------------------------ DATA MERGING ------------------------------ ###
 def merge_additional_data(vehicle_data, lane_change_file, collision_file):
@@ -167,10 +171,14 @@ def merge_additional_data(vehicle_data, lane_change_file, collision_file):
         merged_data = vehicle_data
         merged_data['Lane_Change'] = False
         merged_data['Lane_Change_Reason'] = 'None'
+        merged_data['From_Lane'] = 'None'
+        merged_data['To_Lane'] = 'None'
     else:
         merged_data = pd.merge(vehicle_data, lane_change_data, how='left', on=['Time', 'Vehicle_ID'])
         merged_data['Lane_Change_Reason'] = merged_data['Lane_Change_Reason'].fillna('None')
         merged_data['Lane_Change'] = merged_data['From_Lane'].notna()
+        merged_data['From_Lane'] = merged_data['From_Lane'].fillna('None')
+        merged_data['To_Lane'] = merged_data['To_Lane'].fillna('None')
     
     collision_data = extract_collision_data(collision_file)
     if collision_data.empty:
@@ -200,7 +208,7 @@ if __name__ == "__main__":
     lanechange_path = os.path.join(results_dir_path, lanechange_file)
     collision_path = os.path.join(results_dir_path, collision_file)
 
-    vehicle_data = simulate_and_extract_metrics(sumocfg_path, net_path)
+    vehicle_data = simulate_and_extract_metrics(sumocfg_path, net_path, simulation_time=1800, vehicles='veh0')
 
     vehicle_data = merge_additional_data(vehicle_data, lanechange_path, collision_path)
 
