@@ -31,14 +31,10 @@
         <gui-settings-file value="osm.view.xml"/>
     </gui_only>
 
-    <output>
-        <summary-output value="fullOutput.xml"/> <!-- Full output -->
+    <output>                
+        <lanechange-output value="./../../results/lanechange_output.xml"/> <!-- Lane change output -->
         
-        <fcd-output value="fcdOutput.xml"/> <!-- FCD output (Floating Car Data) -->
-        
-        <lanechange-output value="laneChangeOutput.xml"/> <!-- Lane change output -->
-        
-        <collision-output value="collisionOutput.xml"/> <!-- Collision output -->
+        <collision-output value="./../../results/collision_output.xml"/> <!-- Collision output -->
     </output>
 
 </sumoConfiguration>

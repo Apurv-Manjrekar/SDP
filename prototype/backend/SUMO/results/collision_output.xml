@@ -1,19 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-02-03 18:17:01 by Eclipse SUMO GUI Version 1.21.0
+<!-- generated on 2025-02-11 09:47:59 by Eclipse SUMO sumo Version 1.21.0
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="osm.net.xml.gz"/>
-        <route-files value="osm.passenger.trips.xml"/>
-        <additional-files value="osm.poly.xml.gz"/>
+        <net-file value="/home/apurv/Github/SDP/prototype/backend/SUMO/configs/small_map/osm.net.xml.gz"/>
+        <route-files value="/home/apurv/Github/SDP/prototype/backend/SUMO/configs/small_map/osm.passenger.trips.xml"/>
+        <additional-files value="/home/apurv/Github/SDP/prototype/backend/SUMO/configs/small_map/osm.poly.xml.gz"/>
     </input>
 
     <output>
-        <fcd-output value="fcd_output.xml"/>
-        <summary-output value="summary_output.xml"/>
-        <lanechange-output value="lanechange_output.xml"/>
-        <collision-output value="collision_output.xml"/>
+        <lanechange-output value="/home/apurv/Github/SDP/prototype/backend/SUMO/configs/small_map/./../../results/lanechange_output.xml"/>
+        <collision-output value="/home/apurv/Github/SDP/prototype/backend/SUMO/configs/small_map/./../../results/collision_output.xml"/>
     </output>
 
     <processing>
@@ -33,13 +31,13 @@
     </report>
 
     <traci_server>
-        <remote-port value="51559"/>
+        <remote-port value="42491"/>
     </traci_server>
 
     <gui_only>
-        <gui-settings-file value="osm.view.xml"/>
+        <gui-settings-file value="/home/apurv/Github/SDP/prototype/backend/SUMO/configs/small_map/osm.view.xml"/>
         <start value="true"/>
-        <delay value="10000"/>
+        <delay value="1000"/>
     </gui_only>
 
 </sumoConfiguration>
