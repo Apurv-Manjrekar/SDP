@@ -62,3 +62,38 @@ if __name__ == "__main__":
         print(f"\nResults (Epsilon: {epsilon}):")
         for key, value in dp_results.items():
             print(f"{key}: {value:.3f}")
+
+###################### FOR CONTINOUS DATA ######################
+# import numpy as np
+# import pandas as pd
+# from pydp.algorithms.numerical_mechanisms import LaplaceMechanism  # Correct import
+
+# # Load the collected data
+# df = pd.read_csv("vehicle_data.csv")
+
+# # Define privacy budget (epsilon)
+# epsilon = 5  # Smaller epsilon = more privacy, larger epsilon = better accuracy
+
+# # Function to calculate sensitivity dynamically (for numeric columns)
+# def calculate_sensitivity(df, column):
+#     return df[column].max() - df[column].min()
+
+# # Function to add Laplace noise using column-specific sensitivity
+# def add_laplace_noise(value, sensitivity, epsilon):
+#     laplace_mech = LaplaceMechanism(epsilon, sensitivity)
+#     return laplace_mech.add_noise(value)
+
+# # Apply DP to numeric columns
+# columns_to_noise = ["Speed", "Acceleration"]
+# for column in columns_to_noise:
+#     if column in df.columns:  # Ensure column exists
+#         sensitivity = calculate_sensitivity(df, column)  # Auto-determine sensitivity
+#         print(f"Sensitivity for {column}: {sensitivity}")
+#         df[f"{column}_DP"] = df[column].apply(lambda x: add_laplace_noise(x, sensitivity, epsilon))
+
+
+# df = df[["Speed", "Speed_DP", "Acceleration", "Acceleration_DP"]]
+
+
+# print("Differentially private dataset saved as dp_vehicle_data.csv!")
+# print(df.head())
