@@ -5,7 +5,7 @@ import os
 import subprocess
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 
 CURR_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 SCRIPTS_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "SUMO", "scripts")
@@ -35,6 +35,8 @@ def get_vehicle_data():
         return jsonify({"error": "No data available. Run the simulation first."}), 404
     
     df = pd.read_csv(DATA_FILE_PATH)
+    df.replace([float('inf'), float('-inf')], None, inplace=True)
+    df.replace(pd.NA, None, inplace=True)
     return jsonify(df.to_dict(orient='records'))
 
 @app.route('/lane-changes', methods=['GET'])
