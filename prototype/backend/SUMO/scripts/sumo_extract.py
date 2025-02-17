@@ -195,7 +195,8 @@ def merge_additional_data(vehicle_data, lane_change_file, collision_file):
 if __name__ == "__main__":
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
     # ./../configs/
-    configs_dir_path = os.path.join(curr_dir_path, "..", "configs/small_map")
+    MAP = "small_map"
+    configs_dir_path = os.path.join(curr_dir_path, "..", "configs", MAP)
     results_dir_path = os.path.join(curr_dir_path, "..", "results")
 
     sumocfg_file = "osm.sumocfg"
