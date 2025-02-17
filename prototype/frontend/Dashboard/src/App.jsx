@@ -1,23 +1,78 @@
 import React, { useState, useEffect } from "react";
 
 const RiskDashboard = () => {
-  const [riskWithDP, setRiskWithDP] = useState(Math.random() * 100);
-  const [riskWithoutDP, setRiskWithoutDP] = useState(Math.random() * 100);
+  const [vehicleData, setVehicleData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const API_URL = "http://localhost:8000"; // Flask backend URL
+
+  useEffect(() => {
+    const fetchVehicleData = async () => {
+      try {
+        const response = await fetch(`${API_URL}/vehicle-data`);
+        const data = await response.json();
+
+        if (response.ok) {
+          // Set the fetched data
+          setVehicleData(data);
+        } else {
+          setError(data.error || "Failed to fetch data");
+        }
+      } catch (error) {
+        setError("Error fetching data");
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVehicleData();
+  }, []);
+
+  if (loading) {
+    return <p className="text-center text-gray-600">Loading data...</p>;
+  }
+
+  if (error) {
+    return <p className="text-center text-red-500">{error}</p>;
+  }
+
+  if (vehicleData.length === 0) {
+    return <p className="text-center text-gray-600">No vehicle data available</p>;
+  }
+
+  // Get the headers dynamically from the first vehicle's keys
+  const headers = Object.keys(vehicleData[0]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-5">
-      <div className="w-full max-w-4xl flex flex-row gap-6">
-        {/* Risk Score with Differential Privacy */}
-        <div className="flex-1 bg-white p-6 rounded-2xl shadow-lg text-center">
-          <h2 className="text-xl font-semibold mb-4">Risk Score with Differential Privacy</h2>
-          <p className="text-4xl font-bold text-green-600">{riskWithDP.toFixed(2)}</p>
-        </div>
+      <div className="w-full max-w-5xl bg-white p-6 rounded-2xl shadow-lg">
+        <h2 className="text-2xl font-semibold text-center mb-4">Vehicle Data</h2>
 
-        {/* Risk Score without Differential Privacy */}
-        <div className="flex-1 bg-white p-6 rounded-2xl shadow-lg text-center">
-          <h2 className="text-xl font-semibold mb-4">Risk Score without Differential Privacy</h2>
-          <p className="text-4xl font-bold text-red-600">{riskWithoutDP.toFixed(2)}</p>
-        </div>
+        <table className="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr className="bg-gray-200">
+              {headers.map((header, index) => (
+                <th key={index} className="border border-gray-300 p-2">
+                  {header.replace(/_/g, " ")} {/* Optional: format headers */}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {vehicleData.map((vehicle, index) => (
+              <tr key={index} className="text-center">
+                {headers.map((header, idx) => (
+                  <td key={idx} className="border border-gray-300 p-2">
+                    {vehicle[header] !== null && vehicle[header] !== undefined
+                      ? vehicle[header].toString()
+                      : "N/A"} {/* Display "N/A" for null or undefined */}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
