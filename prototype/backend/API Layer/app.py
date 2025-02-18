@@ -12,14 +12,14 @@ SCRIPTS_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "SUMO", "scripts")
 RESULTS_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "SUMO", "results")
 DP_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Differential Privacy Implementation")
 PROCESS_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Data Processing")
-RISK_SCORE_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Risk Score")
+RISK_SCORE_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Risk-Assessment")
 
 DATA_FILE = "vehicle_data.csv"
 DP_DATA_FILE = "dp_vehicle_data.csv"
 SUMO_SCRIPT = "sumo_extract.py"
 DP_SCRIPT = "googledp_driving_data.py"
 PROCESS_SCRIPT = "data_preprocess.py"
-RISK_SCORE_SCRIPT = "risk_score.py"
+RISK_SCORE_SCRIPT = "calculate_risk.py"
 
 DATA_FILE_PATH = os.path.join(RESULTS_DIR_PATH, DATA_FILE)
 DP_DATA_FILE_PATH = os.path.join(RESULTS_DIR_PATH, DP_DATA_FILE)
