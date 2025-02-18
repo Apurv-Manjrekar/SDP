@@ -241,9 +241,6 @@ if __name__ == "__main__":
 
     vehicle_data = merge_additional_data(vehicle_data, lanechange_path, collision_path)
 
-    speeding_data = vehicle_data[vehicle_data['Speed'] > vehicle_data['Speed_Limit']]
-    speeding_data.head()
-
     vehicle_data.to_csv(results_dir_path + "/vehicle_data.csv", index=False)
     print("Vehicle data saved to vehicle_data.csv!")
     print(vehicle_data.head())
