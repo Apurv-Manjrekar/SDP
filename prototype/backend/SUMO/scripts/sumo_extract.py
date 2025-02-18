@@ -223,7 +223,7 @@ def merge_additional_data(vehicle_data, lane_change_file, collision_file):
 if __name__ == "__main__":
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
     # ./../configs/
-    MAP = "medium_map2"
+    MAP = "medium_map"
     configs_dir_path = os.path.join(curr_dir_path, "..", "configs", MAP)
     results_dir_path = os.path.join(curr_dir_path, "..", "results")
 
