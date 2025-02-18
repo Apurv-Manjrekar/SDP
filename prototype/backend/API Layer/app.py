@@ -12,16 +12,21 @@ SCRIPTS_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "SUMO", "scripts")
 RESULTS_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "SUMO", "results")
 DP_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Differential Privacy Implementation")
 PROCESS_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Data Processing")
+RISK_SCORE_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Risk Score")
+
 DATA_FILE = "vehicle_data.csv"
 DP_DATA_FILE = "dp_vehicle_data.csv"
 SUMO_SCRIPT = "sumo_extract.py"
 DP_SCRIPT = "googledp_driving_data.py"
 PROCESS_SCRIPT = "data_preprocess.py"
+RISK_SCORE_SCRIPT = "risk_score.py"
+
 DATA_FILE_PATH = os.path.join(RESULTS_DIR_PATH, DATA_FILE)
 DP_DATA_FILE_PATH = os.path.join(RESULTS_DIR_PATH, DP_DATA_FILE)
 SUMO_SCRIPT_PATH = os.path.join(SCRIPTS_DIR_PATH, SUMO_SCRIPT)
 DP_SCRIPT_PATH = os.path.join(DP_DIR_PATH, DP_SCRIPT)
 PROCESS_SCRIPT_PATH = os.path.join(PROCESS_DIR_PATH, PROCESS_SCRIPT)
+RISK_SCORE_SCRIPT_PATH = os.path.join(RISK_SCORE_DIR_PATH, RISK_SCORE_SCRIPT)
 
 @app.route('/run-simulation', methods=['POST'])
 def run_simulation():
@@ -120,6 +125,27 @@ def preprocess_data():
         return jsonify({"message": "Data preprocessed successfully."}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to preprocess data: {str(e)}"}), 500
+
+@app.route('/get-risk-score', methods=['POST'])
+def get_risk_score():
+    """
+    Fetches the risk score for a given vehicle ID.
+    """
+    # Get the dataset from the request
+    dataset = request.json['dataset']
+    if dataset == "vehicle_data.csv" and not os.path.exists(DATA_FILE_PATH):
+        return jsonify({"error": "No data available. Run the simulation first."}), 404
+    elif dataset == "dp_vehicle_data.csv" and not os.path.exists(DP_DATA_FILE_PATH):
+        return jsonify({"error": "No data available. Run the simulation first."}), 404
+    elif dataset != "vehicle_data.csv" and dataset != "dp_vehicle_data.csv":
+        return jsonify({"error": "Invalid dataset specified."}), 400
+    
+    # Run the risk score script
+    try:
+        subprocess.run(["python", RISK_SCORE_SCRIPT_PATH, dataset], check=True)
+        return jsonify({"message": "Risk score calculated successfully."}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to calculate risk score: {str(e)}"}), 500
     
 
 if __name__ == '__main__':
