@@ -16,6 +16,8 @@ RISK_SCORE_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Risk-Assessment")
 
 DATA_FILE = "vehicle_data.csv"
 DP_DATA_FILE = "dp_vehicle_data.csv"
+RISK_SCORE_FILE = "vehicle_data_risk_scores.csv"
+DP_RISK_SCORE_FILE = "dp_vehicle_data_risk_scores.csv"
 SUMO_SCRIPT = "sumo_extract.py"
 DP_SCRIPT = "googledp_driving_data.py"
 PROCESS_SCRIPT = "data_preprocess.py"
@@ -23,6 +25,8 @@ RISK_SCORE_SCRIPT = "calculate_risk.py"
 
 DATA_FILE_PATH = os.path.join(RESULTS_DIR_PATH, DATA_FILE)
 DP_DATA_FILE_PATH = os.path.join(RESULTS_DIR_PATH, DP_DATA_FILE)
+RISK_SCORE_FILE_PATH = os.path.join(RESULTS_DIR_PATH, RISK_SCORE_FILE)
+DP_RISK_SCORE_FILE_PATH = os.path.join(RESULTS_DIR_PATH, DP_RISK_SCORE_FILE)
 SUMO_SCRIPT_PATH = os.path.join(SCRIPTS_DIR_PATH, SUMO_SCRIPT)
 DP_SCRIPT_PATH = os.path.join(DP_DIR_PATH, DP_SCRIPT)
 PROCESS_SCRIPT_PATH = os.path.join(PROCESS_DIR_PATH, PROCESS_SCRIPT)
@@ -126,8 +130,8 @@ def preprocess_data():
     except Exception as e:
         return jsonify({"error": f"Failed to preprocess data: {str(e)}"}), 500
 
-@app.route('/get-risk-score', methods=['POST'])
-def get_risk_score():
+@app.route('/calculate-risk-score', methods=['POST'])
+def calculate_risk_score():
     """
     Fetches the risk score for a given vehicle ID.
     """
@@ -146,6 +150,28 @@ def get_risk_score():
         return jsonify({"message": "Risk score calculated successfully."}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to calculate risk score: {str(e)}"}), 500
+    
+@app.route('/get-risk-score', methods=['GET'])
+def get_risk_score():
+    """
+    Fetches the risk score.
+    """
+    if not os.path.exists(RISK_SCORE_FILE_PATH):
+        return jsonify({"error": "No data available. Run the simulation first."}), 404
+    
+    df = pd.read_csv(RISK_SCORE_FILE_PATH)
+    return jsonify(df.to_dict(orient='records'))
+
+@app.route('/get-dp-risk-score', methods=['GET'])
+def get_dp_risk_score():
+    """
+    Fetches the dp risk score.
+    """
+    if not os.path.exists(DP_RISK_SCORE_FILE_PATH):
+        return jsonify({"error": "No data available. Run the simulation first."}), 404
+    
+    df = pd.read_csv(DP_RISK_SCORE_FILE_PATH)
+    return jsonify(df.to_dict(orient='records'))
     
 
 if __name__ == '__main__':
