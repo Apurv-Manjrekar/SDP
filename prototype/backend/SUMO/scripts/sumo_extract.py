@@ -116,7 +116,7 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
                 "--device.rerouting.probability", "0", "--device.emissions.probability", "0", 
                 "--no-internal-links", "1", "--ignore-junction-blocker", "5",
                 "--collision.mingap-factor", "0", "--collision.action", "remove", "--collision.check-junctions", "0",
-                "--step-method.ballistic", "1",
+                # "--step-method.ballistic", "1",
                 "--sloppy-insert", "1", "--eager-insert", "0", "--emergency-insert", "1",
                 "--time-to-teleport", "60", "--time-to-teleport.highways", "30",
                 "--route-steps", "500",

@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-02-18 12:15:52 by Eclipse SUMO sumo Version 1.21.0
+<!-- generated on 2025-02-18 14:56:46 by Eclipse SUMO sumo Version 1.21.0
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map2/osm.net.xml.gz"/>
-        <route-files value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map2/osm.motorcycle.trips.xml,/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map2/osm.passenger.trips.xml,/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map2/osm.truck.trips.xml"/>
+        <net-file value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/osm.net.xml.gz"/>
+        <route-files value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/osm.motorcycle.trips.xml,/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/osm.passenger.trips.xml,/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/osm.truck.trips.xml"/>
     </input>
 
     <output>
-        <lanechange-output value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map2/./../../results/lanechange_output.xml"/>
-        <collision-output value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map2/./../../results/collision_output.xml"/>
+        <lanechange-output value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/./../../results/lanechange_output.xml"/>
+        <collision-output value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/./../../results/collision_output.xml"/>
     </output>
 
     <processing>
-        <step-method.ballistic value="1"/>
         <threads value="16"/>
         <lateral-resolution value="1"/>
         <route-steps value="500"/>
@@ -51,11 +50,11 @@
     </emissions>
 
     <traci_server>
-        <remote-port value="60023"/>
+        <remote-port value="40895"/>
     </traci_server>
 
     <gui_only>
-        <gui-settings-file value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map2/osm.view.xml"/>
+        <gui-settings-file value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/osm.view.xml"/>
         <start value="true"/>
         <delay value="0"/>
     </gui_only>

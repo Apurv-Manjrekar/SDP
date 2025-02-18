@@ -36,7 +36,7 @@ def apply_differential_privacy(df, numeric_columns=["Speed", "Acceleration", "La
             sensitivity = calculate_sensitivity(df_copy, column)
             print(f"Sensitivity for {column}: {sensitivity}")
             
-            df_copy[f"{column}_DP"] = df_copy[column].apply(
+            df_copy[column] = df_copy[column].apply(
                 lambda x: add_laplace_noise(x, sensitivity, epsilon) if pd.notnull(x) else x
             )
     
@@ -59,10 +59,10 @@ if __name__ == "__main__":
     df_dp = apply_differential_privacy(df, numeric_columns=numeric_columns, epsilon=5)
 
     # Keep only original and DP columns
-    dp_columns = [f"{col}_DP" for col in numeric_columns]
-    selected_columns = non_numeric_columns + dp_columns    
-    df_dp = df_dp[selected_columns]
-    
+    # dp_columns = [f"{col}_DP" for col in numeric_columns]
+    # selected_columns = non_numeric_columns + dp_columns    
+    # df_dp = df_dp[selected_columns]
+
     # Save and display results
     df_dp.to_csv(results_dir_path + "/dp_vehicle_data.csv", index=False)
     print("Differentially private dataset saved as dp_vehicle_data.csv!")
