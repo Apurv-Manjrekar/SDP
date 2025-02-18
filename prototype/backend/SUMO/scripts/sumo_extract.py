@@ -112,20 +112,32 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
     """
     net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat = extract_network_info(net_path)
 
-    traci.start(["sumo", "-c", sumo_cfg, "--start", "--delay", "1000"])
+    traci.start(["sumo", "-c", sumo_cfg, "--start", "--delay", "0", "--threads", "16",
+                "--device.rerouting.probability", "0", "--device.emissions.probability", "0", 
+                "--no-internal-links", "1", "--ignore-junction-blocker", "5",
+                "--collision.mingap-factor", "0", "--collision.action", "remove", "--collision.check-junctions", "0",
+                "--step-method.ballistic", "1",
+                "--sloppy-insert", "1", "--eager-insert", "0", "--emergency-insert", "1",
+                "--time-to-teleport", "60", "--time-to-teleport.highways", "30",
+                "--route-steps", "500",
+                "--default.action-step-length", "1", "--lateral-resolution", "1",
+                "--ignore-route-errors", "--no-warnings", "--no-step-log"
+                ]) # python SUMO
 
     data_rows = []
+
+    vehicles_remaining = set(vehicles)
+    vehicles_in_progress = set()
 
     # while traci.simulation.getMinExpectedNumber() > 0: # until all vehicles have left the network
     for step in range(simulation_time): # run for SIMULATION_TIME seconds
         traci.simulationStep()
-
         current_time = float(traci.simulation.getTime())
-        # print(f"Time: {current_time}")
+        print(f"Time: {current_time}")
         vehicle_ids = traci.vehicle.getIDList()
 
-        if vehicles is not None:
-            vehicle_ids = [v for v in vehicle_ids if v in vehicles]
+        if vehicles != None:
+            vehicle_ids = [v for v in vehicle_ids if v in vehicles_remaining]
 
         for vehicle_id in vehicle_ids:
             speed = traci.vehicle.getSpeed(vehicle_id)
@@ -138,9 +150,9 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
             leader_info = traci.vehicle.getLeader(vehicle_id)
             if leader_info:
                 _, headway_distance = leader_info
-                time_gap = headway_distance / speed if speed > 0 else float('inf')
+                time_gap = headway_distance / speed if speed > 0 else None
             else:
-                headway_distance, time_gap = float('inf'), float('inf')
+                headway_distance, time_gap = None, None
 
             data_rows.append({
                 'Time': current_time,
@@ -154,8 +166,24 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
                 'Time_Gap': time_gap,
                 'Speed_Limit': speed_limit
             })
+        
+        if vehicles != None:
+            for vehicle_id in vehicles_in_progress.copy():
+                if vehicle_id not in vehicle_ids:
+                    vehicles_remaining.discard(vehicle_id)
+                    vehicles_in_progress.discard(vehicle_id)
+                    print(f"Vehicle {vehicle_id} has left the network.")
 
-    traci.close()
+            for vehicle_id in vehicles_remaining.copy():
+                if vehicle_id not in vehicles_in_progress and vehicle_id in vehicle_ids:
+                    vehicles_in_progress.add(vehicle_id)
+                    print(f"Vehicle {vehicle_id} has entered the network.")
+            
+            if len(vehicles_remaining) == 0:
+                print("All vehicles have left the network.")
+                break
+
+    traci.close() # not needed for libsumo
     
     return pd.DataFrame(data_rows)
 
@@ -195,7 +223,7 @@ def merge_additional_data(vehicle_data, lane_change_file, collision_file):
 if __name__ == "__main__":
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
     # ./../configs/
-    MAP = "small_map"
+    MAP = "medium_map2"
     configs_dir_path = os.path.join(curr_dir_path, "..", "configs", MAP)
     results_dir_path = os.path.join(curr_dir_path, "..", "results")
 
@@ -209,9 +237,12 @@ if __name__ == "__main__":
     lanechange_path = os.path.join(results_dir_path, lanechange_file)
     collision_path = os.path.join(results_dir_path, collision_file)
 
-    vehicle_data = simulate_and_extract_metrics(sumocfg_path, net_path, simulation_time=1800, vehicles='veh0')
+    vehicle_data = simulate_and_extract_metrics(sumocfg_path, net_path, simulation_time=1800, vehicles=['veh0'])
 
     vehicle_data = merge_additional_data(vehicle_data, lanechange_path, collision_path)
+
+    speeding_data = vehicle_data[vehicle_data['Speed'] > vehicle_data['Speed_Limit']]
+    speeding_data.head()
 
     vehicle_data.to_csv(results_dir_path + "/vehicle_data.csv", index=False)
     print("Vehicle data saved to vehicle_data.csv!")
