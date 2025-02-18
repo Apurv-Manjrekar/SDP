@@ -1,43 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-02-18 12:35:56 by Eclipse SUMO sumo Version 1.21.0
+<!-- generated on 2025-02-11 10:08:40 by Eclipse SUMO sumo Version 1.21.0
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="/Users/saimanish/SeniorDesign/SDP/prototype/backend/SUMO/scripts/../configs/small_map/osm.net.xml.gz"/>
-        <route-files value="/Users/saimanish/SeniorDesign/SDP/prototype/backend/SUMO/scripts/../configs/small_map/osm.passenger.trips.xml"/>
-        <additional-files value="/Users/saimanish/SeniorDesign/SDP/prototype/backend/SUMO/scripts/../configs/small_map/osm.poly.xml.gz"/>
+        <net-file value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/small_map/osm.net.xml.gz"/>
+        <route-files value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/small_map/osm.passenger.trips.xml"/>
+        <additional-files value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/small_map/osm.poly.xml.gz"/>
     </input>
 
     <output>
-        <lanechange-output value="/Users/saimanish/SeniorDesign/SDP/prototype/backend/SUMO/scripts/../configs/small_map/./../../results/lanechange_output.xml"/>
-        <collision-output value="/Users/saimanish/SeniorDesign/SDP/prototype/backend/SUMO/scripts/../configs/small_map/./../../results/collision_output.xml"/>
+        <lanechange-output value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/small_map/./../../results/lanechange_output.xml"/>
+        <collision-output value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/small_map/./../../results/collision_output.xml"/>
     </output>
 
     <processing>
+        <threads value="16"/>
+        <lateral-resolution value="1"/>
+        <route-steps value="500"/>
+        <no-internal-links value="1"/>
+        <ignore-junction-blocker value="5"/>
         <ignore-route-errors value="true"/>
+        <collision.action value="remove"/>
+        <collision.check-junctions value="0"/>
+        <collision.mingap-factor value="0"/>
+        <time-to-teleport value="60"/>
+        <time-to-teleport.highways value="30"/>
+        <sloppy-insert value="1"/>
+        <eager-insert value="0"/>
+        <emergency-insert value="1"/>
         <tls.actuated.jam-threshold value="30"/>
+        <default.action-step-length value="1"/>
     </processing>
 
     <routing>
+        <device.rerouting.probability value="0"/>
         <device.rerouting.adaptation-steps value="18"/>
         <device.rerouting.adaptation-interval value="10"/>
     </routing>
 
     <report>
         <verbose value="true"/>
+        <no-warnings value="true"/>
         <duration-log.statistics value="true"/>
         <no-step-log value="true"/>
     </report>
 
+    <emissions>
+        <device.emissions.probability value="0"/>
+    </emissions>
+
     <traci_server>
-        <remote-port value="64082"/>
+        <remote-port value="58491"/>
     </traci_server>
 
     <gui_only>
-        <gui-settings-file value="/Users/saimanish/SeniorDesign/SDP/prototype/backend/SUMO/scripts/../configs/small_map/osm.view.xml"/>
+        <gui-settings-file value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/small_map/osm.view.xml"/>
         <start value="true"/>
-        <delay value="1000"/>
+        <delay value="0"/>
     </gui_only>
 
 </sumoConfiguration>
