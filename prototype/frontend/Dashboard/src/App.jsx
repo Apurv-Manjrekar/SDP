@@ -7,6 +7,7 @@ const RiskDashboard = () => {
   const [error, setError] = useState(null);
   const [isApplyingDp, setIsApplyingDp] = useState(false);
   const [epsilon, setEpsilon] = useState(1.0); // Default privacy budget
+  const [showRiskScores, setShowRiskScores] = useState(false);
   const API_URL = "http://localhost:8000";
 
   useEffect(() => {
@@ -144,52 +145,68 @@ const RiskDashboard = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-5">
       {/* Main Title */}
-      <h1 className="text-4xl font-bold text-center mb-8">Vehicle Data Analytics</h1>
+      <h1 className="text-4xl font-bold text-center mb-8">
+        {showRiskScores ? "Risk Scores" : "Vehicle Data Dashboard"}
+      </h1>
 
-      {/* Differential Privacy Implementation Section */}
-      <div className="w-full max-w-5xl bg-white p-6 rounded-2xl shadow-lg mb-6">
-        <h2 className="text-2xl font-semibold text-center mb-4">Differential Privacy Implementation</h2>
-        <p className="text-gray-700 mb-4">
-          Data protection using Laplace mechanism with <strong>ε = {epsilon}</strong>. Key characteristics:
-        </p>
-        <ul className="list-disc list-inside text-gray-700 mb-4">
-          <li><strong>ε value</strong> controls noise magnitude.</li>
-          <li><strong>Lower ε</strong> = stronger privacy.</li>
-          <li>Numerical data protected.</li>
-          <li>Statistical utility preserved.</li>
-        </ul>
-      </div>
+      {/* Button to Toggle Risk Scores */}
+      <button
+        onClick={() => setShowRiskScores(!showRiskScores)}
+        className="mb-6 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      >
+        {showRiskScores ? "Return to Main Screen" : "Show Risk Scores"}
+      </button>
 
-      {/* Risk Score Tables */}
-      {renderTable("Risk Scores", riskScores)}
-      {renderTable("Differential Privacy Risk Scores", dpRiskScores)}
+      {/* Display Risk Score Tables when the button is clicked */}
+      {showRiskScores ? (
+        <>
+          {renderTable("Risk Score without Differential Privacy", riskScores)}
+          {renderTable("Risk Score with Differential Privacy", dpRiskScores)}
+        </>
+      ) : (
+        <>
+          {/* Differential Privacy Implementation Section */}
+          <div className="w-full max-w-5xl bg-white p-6 rounded-2xl shadow-lg mb-6">
+            <h2 className="text-2xl font-semibold text-center mb-4">Differential Privacy Implementation</h2>
+            <p className="text-gray-700 mb-4">
+              Data protection using Laplace mechanism with <strong>ε = {epsilon}</strong>. Key characteristics:
+            </p>
+            <ul className="list-disc list-inside text-gray-700 mb-4">
+              <li><strong>ε value</strong> controls noise magnitude.</li>
+              <li><strong>Lower ε</strong> = stronger privacy.</li>
+              <li>Numerical data protected.</li>
+              <li>Statistical utility preserved.</li>
+            </ul>
+          </div>
 
-      {/* Privacy Budget Slider and Apply Button */}
-      <div className="w-full max-w-5xl bg-white p-6 rounded-2xl shadow-lg mb-6">
-        <h2 className="text-2xl font-semibold text-center mb-4">Differential Privacy Settings</h2>
-        <div className="flex flex-col items-center space-y-4">
-          <label htmlFor="epsilon" className="text-lg font-medium">
-            Privacy Budget (ε): {epsilon}
-          </label>
-          <input
-            type="range"
-            id="epsilon"
-            min="0.1"
-            max="10.0"
-            step="0.1"
-            value={epsilon}
-            onChange={(e) => setEpsilon(parseFloat(e.target.value))}
-            className="w-full max-w-md"
-          />
-          <button
-            onClick={handleApplyDp}
-            disabled={isApplyingDp || loading}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {isApplyingDp ? 'Processing...' : 'Apply Differential Privacy'}
-          </button>
-        </div>
-      </div>
+          {/* Privacy Budget Slider and Apply Button */}
+          <div className="w-full max-w-5xl bg-white p-6 rounded-2xl shadow-lg mb-6">
+            <h2 className="text-2xl font-semibold text-center mb-4">Differential Privacy Settings</h2>
+            <div className="flex flex-col items-center space-y-4">
+              <label htmlFor="epsilon" className="text-lg font-medium">
+                Privacy Budget (ε): {epsilon}
+              </label>
+              <input
+                type="range"
+                id="epsilon"
+                min="0.1"
+                max="10.0"
+                step="0.1"
+                value={epsilon}
+                onChange={(e) => setEpsilon(parseFloat(e.target.value))}
+                className="w-full max-w-md"
+              />
+              <button
+                onClick={handleApplyDp}
+                disabled={isApplyingDp || loading}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {isApplyingDp ? 'Processing...' : 'Apply Differential Privacy'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
