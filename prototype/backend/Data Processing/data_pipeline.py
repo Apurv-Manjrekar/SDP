@@ -1,5 +1,7 @@
 import pandas as pd
 
+#Remove headway and time gap values to be less 
+
 def load_data(file_path):
     """Loads the SUMO CSV data into a DataFrame."""
     return pd.read_csv(file_path)
