@@ -37,7 +37,7 @@ def calculate_risk(df):
     # df.to_csv("baseline_risk_scores.csv", index=False)
 
     # Output summary statistics
-    print(df[["Speeding_Risk", "Acceleration_Risk", "Braking_Risk", "Lane_Change_Risk", "Headway_Risk"]].describe())
+    # print(df[["Speeding_Risk", "Acceleration_Risk", "Braking_Risk", "Lane_Change_Risk", "Headway_Risk"]].describe())
     print(df[["Risk_Score"]].describe())
     print(road_risk_scores.head())
 
