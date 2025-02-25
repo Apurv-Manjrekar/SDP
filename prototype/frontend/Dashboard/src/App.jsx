@@ -3,6 +3,7 @@ import { Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import StaticDashboard from "./pages/StaticDashboard";
 import DynamicSimulation from "./pages/DynamicSimulation";
+import LearnMore from "./pages/LearnMore";
 
 const App = () => {
   return (
@@ -12,6 +13,7 @@ const App = () => {
           <h1 className="text-xl font-bold">Differential Privacy Dashboard</h1>
           <div>
             <Link to="/" className="px-4">Home</Link>
+            <span className="text-gray-500">|</span>
             <Link to="/static-dashboard" className="px-4">Static Dashboard</Link>
             <Link to="/dynamic-simulation" className="px-4">Dynamic Simulation</Link>
           </div>
@@ -22,6 +24,7 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/static-dashboard" element={<StaticDashboard />} />
         <Route path="/dynamic-simulation" element={<DynamicSimulation />} />
+        <Route path="/learn-more" element={<LearnMore />} />
       </Routes>
     </div>
   );

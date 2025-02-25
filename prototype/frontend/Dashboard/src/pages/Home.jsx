@@ -1,11 +1,14 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Home = () => {
   return (
     <div className="min-h-screen flex items-center justify-center flex-col bg-gray-100">
       <h1 className="text-4xl font-bold">Welcome to the Differential Privacy Dashboard</h1>
       <p className="text-lg text-gray-700 mt-4">
-        Learn how differential privacy protects data while maintaining statistical utility.
+        <Link to="/learn-more" className="text-blue-500 hover:underline">
+          Learn how differential privacy protects data while maintaining statistical utility.
+        </Link>
       </p>
     </div>
   );
