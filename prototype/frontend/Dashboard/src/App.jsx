@@ -15,6 +15,7 @@ const App = () => {
             <Link to="/" className="px-4">Home</Link>
             <span className="text-gray-500">|</span>
             <Link to="/static-dashboard" className="px-4">Static Dashboard</Link>
+            <span className="text-gray-500">|</span>
             <Link to="/dynamic-simulation" className="px-4">Dynamic Simulation</Link>
           </div>
         </div>
