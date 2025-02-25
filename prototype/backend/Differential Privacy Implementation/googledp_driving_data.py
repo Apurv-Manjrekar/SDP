@@ -2,6 +2,7 @@ import pandas as pd
 from pydp.algorithms.numerical_mechanisms import LaplaceMechanism  # Correct import
 import os
 import numpy as np
+import argparse
 
 def calculate_sensitivity(df, column):
     """
@@ -43,10 +44,18 @@ def apply_differential_privacy(df, numeric_columns=["Speed", "Acceleration", "La
     return df_copy
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Apply Differential Privacy to vehicle data.")
+    parser.add_argument("--dataset", type=str, default="vehicle_data.csv", help="Name of dataset file (e.g., vehicle_data.csv)")
+
+    args = parser.parse_args()
+
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
     results_dir_path = os.path.join(curr_dir_path, "..", "SUMO", "results")
+
+    dataset = args.dataset
+    
     # Load dataset
-    df = pd.read_csv(results_dir_path + "/vehicle_data.csv")
+    df = pd.read_csv(results_dir_path + "/" + dataset)
 
     # Define numerical columns that need DP
     numeric_columns = ["Speed", "Acceleration", "Latitude", "Longitude", 
@@ -64,7 +73,7 @@ if __name__ == "__main__":
     # df_dp = df_dp[selected_columns]
 
     # Save and display results
-    df_dp.to_csv(results_dir_path + "/dp_vehicle_data.csv", index=False)
+    df_dp.to_csv(results_dir_path + "/dp_" + dataset, index=False)
     print("Differentially private dataset saved as dp_vehicle_data.csv!")
     print(df_dp.head())
 

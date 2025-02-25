@@ -43,18 +43,169 @@ def run_simulation():
     except subprocess.CalledProcessError as e:
         return jsonify({"error": f"Simulation failed: {str(e)}"}), 500
     
-@app.route('/vehicle-data', methods=['GET'])
-def get_vehicle_data():
+@app.route('/vehicle-list', methods=['GET'])
+def get_vehicle_list():
     """
-    Fetches processed vehicle data from the CSV file.
+    Returns a list of unique vehicle IDs from the dataset.
     """
     if not os.path.exists(DATA_FILE_PATH):
         return jsonify({"error": "No data available. Run the simulation first."}), 404
     
-    df = pd.read_csv(DATA_FILE_PATH)
-    df.replace([float('inf'), float('-inf')], None, inplace=True)
-    df.replace(pd.NA, None, inplace=True)
-    return jsonify(df.to_dict(orient='records'))
+    try:
+        # Process the file in chunks to extract unique vehicle IDs
+        unique_vehicles = set()
+        
+        # Use chunk processing for large files
+        for chunk in pd.read_csv(DATA_FILE_PATH, chunksize=10000, usecols=['Vehicle_ID']):
+            unique_in_chunk = chunk['Vehicle_ID'].unique()
+            unique_vehicles.update(unique_in_chunk)
+        
+        # Sort the vehicle IDs for better UX
+        vehicle_list = sorted(list(unique_vehicles), key=lambda x: (isinstance(x, str), x))
+        
+        return jsonify(vehicle_list)
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch vehicle list: {str(e)}"}), 500
+    
+@app.route('/vehicle-data', methods=['GET'])
+def get_vehicle_data():
+    """
+    Fetches processed vehicle data from the CSV file with pagination.
+    """
+    if not os.path.exists(DATA_FILE_PATH):
+        return jsonify({"error": "No data available. Run the simulation first."}), 404
+    
+    # Get pagination parameters
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=50, type=int)
+    
+    # Calculate offsets
+    offset = (page - 1) * per_page
+    
+    try:
+        # Get total number of rows first (efficiently for large files)
+        with open(DATA_FILE_PATH, 'r') as f:
+            total_rows = sum(1 for _ in f) - 1  # Subtract header
+        
+        # Read the specific chunk with skiprows and nrows
+        df = pd.read_csv(DATA_FILE_PATH, 
+                         skiprows=range(1, offset + 1) if offset > 0 else None,
+                         nrows=per_page)
+        
+        # Proper handling of NaN, infinity, and NA values for JSON serialization
+        df = df.replace([float('inf'), float('-inf')], "None")
+        df = df.where(pd.notna(df), "None")  # Convert all NaN to None
+        
+        # Convert boolean columns to Python booleans
+        bool_columns = ['Lane_Change', 'Collision']
+        for col in bool_columns:
+            if col in df.columns:
+                df[col] = df[col].map({1: True, 0: False, 'True': True, 'False': False})
+        
+        return jsonify({
+            "data": df.to_dict(orient='records'),
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": total_rows,
+                "total_pages": (total_rows + per_page - 1) // per_page
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch data: {str(e)}"}), 500
+
+@app.route('/vehicle-data/<vehicle_id>', methods=['GET'])
+def get_vehicle_data_by_id(vehicle_id):
+    """
+    Fetches data for a specific vehicle by ID with pagination.
+    """
+    if not os.path.exists(DATA_FILE_PATH):
+        return jsonify({"error": "No data available."}), 404
+
+    # Get pagination parameters
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=50, type=int)
+    
+    try:
+        # Use dask for efficient processing of large CSV files
+        chunks = []
+        total_matching_rows = 0
+        
+        # First pass: count total matching rows (for pagination info)
+        # For very large files, you might want to store this info separately
+        for chunk in pd.read_csv(DATA_FILE_PATH, chunksize=10000):
+            vehicle_chunk = chunk[chunk['Vehicle_ID'].astype(str) == str(vehicle_id)]
+            total_matching_rows += len(vehicle_chunk)
+        
+        # If no matching rows found
+        if total_matching_rows == 0:
+            return jsonify({
+                "data": [],
+                "pagination": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": 0,
+                    "total_pages": 0
+                }
+            })
+        
+        # Second pass: get the specific page of data
+        skip_rows = (page - 1) * per_page
+        rows_to_collect = per_page
+        collected_rows = 0
+        
+        for chunk in pd.read_csv(DATA_FILE_PATH, chunksize=10000):
+            vehicle_chunk = chunk[chunk['Vehicle_ID'].astype(str) == str(vehicle_id)]
+            
+            if skip_rows >= len(vehicle_chunk):
+                skip_rows -= len(vehicle_chunk)
+                continue
+                
+            relevant_rows = vehicle_chunk.iloc[skip_rows:skip_rows + rows_to_collect]
+            chunks.append(relevant_rows)
+            
+            collected_rows += len(relevant_rows)
+            if collected_rows >= per_page:
+                break
+                
+            skip_rows = 0
+            rows_to_collect = per_page - collected_rows
+        
+        # Combine all chunks into a single dataframe
+        if chunks:
+            df = pd.concat(chunks) if len(chunks) > 1 else chunks[0]
+            
+            # Proper handling of NaN, infinity, and NA values for JSON serialization
+            df = df.replace([float('inf'), float('-inf')], "None")
+            df = df.where(pd.notna(df), "None")  # Convert all NaN to None
+            
+            # Convert boolean columns to Python booleans
+            bool_columns = ['Lane_Change', 'Collision']
+            for col in bool_columns:
+                if col in df.columns:
+                    df[col] = df[col].map({1: True, 0: False, 'True': True, 'False': False})
+            
+            return jsonify({
+                "data": df.to_dict(orient='records'),
+                "pagination": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total_matching_rows,
+                    "total_pages": (total_matching_rows + per_page - 1) // per_page
+                }
+            })
+        else:
+            return jsonify({
+                "data": [],
+                "pagination": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total_matching_rows,
+                    "total_pages": (total_matching_rows + per_page - 1) // per_page
+                }
+            })
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch vehicle data: {str(e)}"}), 500
 
 @app.route('/lane-changes', methods=['GET'])
 def get_lane_changes():
@@ -107,6 +258,7 @@ def get_dp_vehicle_data():
     df = pd.read_csv(DP_DATA_FILE_PATH)
     df.replace([float('inf'), float('-inf')], None, inplace=True)
     df.replace(pd.NA, None, inplace=True)
+    print(df.head())
     return jsonify(df.to_dict(orient='records'))
 
 @app.route('/preprocess-data', methods=['POST'])
@@ -160,7 +312,22 @@ def get_risk_score():
         return jsonify({"error": "No data available. Run the simulation first."}), 404
     
     df = pd.read_csv(RISK_SCORE_FILE_PATH)
+    print(df.head())
     return jsonify(df.to_dict(orient='records'))
+
+@app.route('/get-risk-score/<vehicle_id>', methods=['GET'])
+def get_risk_score_by_id(vehicle_id):
+    """ Fetches risk score for a specific vehicle """
+    if not os.path.exists(RISK_SCORE_FILE_PATH):
+        return jsonify({"error": "No risk data available."}), 404
+    
+    df = pd.read_csv(RISK_SCORE_FILE_PATH)
+    risk_data = df[df['Vehicle_ID'].astype(str) == vehicle_id]
+    
+    if risk_data.empty:
+        return jsonify({"error": "Risk score not found."}), 404
+    print(risk_data.head())
+    return jsonify(risk_data.to_dict(orient='records'))
 
 @app.route('/get-dp-risk-score', methods=['GET'])
 def get_dp_risk_score():
@@ -171,8 +338,22 @@ def get_dp_risk_score():
         return jsonify({"error": "No data available. Run the simulation first."}), 404
     
     df = pd.read_csv(DP_RISK_SCORE_FILE_PATH)
+    print(df.head())
     return jsonify(df.to_dict(orient='records'))
+
+@app.route('/get-dp-risk-score/<vehicle_id>', methods=['GET'])
+def get_dp_risk_score_by_id(vehicle_id):
+    """ Fetches dp risk score for a specific vehicle """
+    if not os.path.exists(DP_RISK_SCORE_FILE_PATH):
+        return jsonify({"error": "No risk data available."}), 404
     
+    df = pd.read_csv(DP_RISK_SCORE_FILE_PATH)
+    risk_data = df[df['Vehicle_ID'].astype(str) == vehicle_id]
+    
+    if risk_data.empty:
+        return jsonify({"error": "Risk score not found."}), 404
+    print(risk_data.head())
+    return jsonify(risk_data.to_dict(orient='records'))    
 
 if __name__ == '__main__':
     app.run(debug=True, host='localhost', port=8000)

@@ -125,9 +125,9 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
                 ]) # python SUMO
 
     data_rows = []
-
-    vehicles_remaining = set(vehicles)
-    vehicles_in_progress = set()
+    if vehicles != None:
+        vehicles_remaining = set(vehicles)
+        vehicles_in_progress = set()
 
     # while traci.simulation.getMinExpectedNumber() > 0: # until all vehicles have left the network
     for step in range(simulation_time): # run for SIMULATION_TIME seconds
@@ -237,10 +237,14 @@ if __name__ == "__main__":
     lanechange_path = os.path.join(results_dir_path, lanechange_file)
     collision_path = os.path.join(results_dir_path, collision_file)
 
-    vehicle_data = simulate_and_extract_metrics(sumocfg_path, net_path, simulation_time=1800, vehicles=['veh0'])
+    vehicles = None
+    vehicle_data = simulate_and_extract_metrics(sumocfg_path, net_path, simulation_time=2100, vehicles=vehicles)
 
     vehicle_data = merge_additional_data(vehicle_data, lanechange_path, collision_path)
 
-    vehicle_data.to_csv(results_dir_path + "/vehicle_data.csv", index=False)
+    if vehicles == None:
+        vehicle_data.to_csv(results_dir_path + "/vehicle_data.csv", index=False)
+    else:
+        vehicle_data.to_csv(results_dir_path + "/vehicle_data_" + str(vehicles) + ".csv", index=False)
     print("Vehicle data saved to vehicle_data.csv!")
     print(vehicle_data.head())
