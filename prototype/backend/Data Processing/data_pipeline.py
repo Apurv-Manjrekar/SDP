@@ -48,7 +48,7 @@ def process_sumo_data(file_path, output_path):
     df['HardBraking'] = df['Acceleration'] < -3.0
     df['LaneChangeFrequency'] = df['Lane_Change'].astype(int)
     df['UnsafeHeadway'] = df['Time_Gap'] < 2.0
-    df['UnsafeTimeGap'] = df['Time_Gap'] < 1.5
+    #df['UnsafeTimeGap'] = df['Time_Gap'] < 1.5
     
     # Aggregate all features
     agg_df = detect_speeding(df)
@@ -56,8 +56,8 @@ def process_sumo_data(file_path, output_path):
     agg_df = agg_df.merge(detect_hard_braking(df), on='Vehicle_ID')
     agg_df = agg_df.merge(detect_lane_changes(df), on='Vehicle_ID')
     agg_df = agg_df.merge(detect_headway_violations(df), on='Vehicle_ID')
-    agg_df = agg_df.merge(detect_unsafe_time_gap(df), on='Vehicle_ID')
-    agg_df = agg_df.merge(detect_collisions(df), on='Vehicle_ID')
+    #agg_df = agg_df.merge(detect_unsafe_time_gap(df), on='Vehicle_ID')
+    #agg_df = agg_df.merge(detect_collisions(df), on='Vehicle_ID')
     
     agg_df.to_csv(output_path, index=False)
     print(f"Processed data saved to {output_path}")

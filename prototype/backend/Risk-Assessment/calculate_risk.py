@@ -20,11 +20,11 @@ def calculate_risk(df):
     HEADWAY_THRESHOLD = 2.0                         # seconds (safe following distance)
 
     # Compute risk factors
-    df["Speeding_Risk"] = (df["Speed"] > df["Speed_Limit"]).astype(int) * WEIGHTS["speeding"]
-    df["Acceleration_Risk"] = (df["Acceleration"] > ACCELERATION_THRESHOLD).astype(int) * WEIGHTS["acceleration"]
-    df["Braking_Risk"] = (df["Acceleration"] < BRAKING_THRESHOLD).astype(int) * WEIGHTS["braking"]
-    df["Lane_Change_Risk"] = df["Lane_Change"].astype(int) * WEIGHTS["lane_change"]
-    df["Headway_Risk"] = (df["Time_Gap"] < HEADWAY_THRESHOLD).astype(int) * WEIGHTS["headway"]
+    df["Speeding_Risk"] = df['SpeedingViolations'] * WEIGHTS["speeding"]
+    df["Acceleration_Risk"] = df['FastAcceleration'] * WEIGHTS["acceleration"]
+    df["Braking_Risk"] = df['HardBrakings'] * WEIGHTS["braking"]
+    df["Lane_Change_Risk"] = df['LaneChanges'] * WEIGHTS["lane_change"]
+    df["Headway_Risk"] = df['UnsafeHeadways'] * WEIGHTS["headway"]
 
     # Compute total risk score per vehicle instance
     df["Risk_Score"] = df[["Speeding_Risk", "Acceleration_Risk", "Braking_Risk", "Lane_Change_Risk", "Headway_Risk"]].sum(axis=1)
@@ -54,8 +54,10 @@ if __name__ == "__main__":
 
     dataset = args.dataset
 
+    #Update! Load the preprocessed csv file
+    df = pd.read_csv('prototype/backend/Data Processing/processed_sumo_features.csv')
     # Load the dataset
-    df = pd.read_csv(results_dir_path + "/" + dataset)
+    #df = pd.read_csv(results_dir_path + "/" + dataset)
 
     road_risk_scores = calculate_risk(df)
     # risk_score = road_risk_scores["Avg_Risk_Score"][0]
