@@ -5,7 +5,10 @@ import traci
 import pandas as pd
 import math
 import shutil
-
+import argparse
+import ast
+from sumolib import net
+import time
 
 ### ------------------------------ FILE MANAGEMENT ------------------------------ ###
 def decompress_gz(input_gz_file):
@@ -58,6 +61,43 @@ def sumo_to_latlon(x, y, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, 
     return lat, lon
 
 
+def latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat):
+    """
+    Converts real-world latitude and longitude to SUMO coordinates.
+    """
+    lon_range = max_lon - min_lon
+    lat_range = max_lat - min_lat
+    
+    abs_x = ((lon - min_lon) / lon_range) * net_offset_x
+    abs_y = ((lat - min_lat) / lat_range) * net_offset_y
+
+    x = abs_x - net_offset_x
+    y = abs_y - net_offset_y
+    
+    return x, y
+
+
+def get_nearest_edge(lat, lon, net_file):
+    """
+    Finds the nearest edge to a given latitude and longitude.
+    """
+    net_data = net.readNet(net_file)
+
+    net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat = extract_network_info(net_file)
+
+    x, y = latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
+
+    print(f"Converted ({lat}, {lon}) -> SUMO ({x}, {y})")
+
+    edges = net_data.getNeighboringEdges(x, y, 200)
+    if not edges:
+        print("No edges found nearby.")
+        return None
+    
+    nearest_edge = min(edges, key=lambda edge: edge[1])[0]
+
+    return nearest_edge.getID()
+
 ### ------------------------------ METRIC EXTRACTION ------------------------------ ###
 def extract_lane_change_data(lane_change_file):
     """
@@ -106,7 +146,7 @@ def extract_collision_data(collision_file):
 
 
 ### ------------------------------ SIMULATION ------------------------------ ###
-def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicles=None):
+def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicles=None, dynamic=False, start_point=None, end_point=None, vehicle_type=None, vehicle_behavior=None):
     """
     Runs the SUMO simulation and extracts vehicle metrics.
     """
@@ -124,6 +164,14 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
                 "--ignore-route-errors", "--no-warnings", "--no-step-log"
                 ]) # python SUMO
 
+    if dynamic:
+        print(f"Adding dynamic vehicle from {start_point} to {end_point}")
+        nearest_start_edge = get_nearest_edge(start_point[0], start_point[1], net_path)
+        nearest_end_edge = get_nearest_edge(end_point[0], end_point[1], net_path)
+        dynamic_vehicle_id = add_vehicle(nearest_start_edge, nearest_end_edge, vehicle_type, vehicle_behavior)
+        vehicles = [dynamic_vehicle_id]
+        print(f"Dynamic vehicle ID: {dynamic_vehicle_id}")
+
     data_rows = []
     if vehicles != None:
         vehicles_remaining = set(vehicles)
@@ -133,7 +181,7 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
     for step in range(simulation_time): # run for SIMULATION_TIME seconds
         traci.simulationStep()
         current_time = float(traci.simulation.getTime())
-        print(f"Time: {current_time}")
+        # print(f"Time: {current_time}")
         vehicle_ids = traci.vehicle.getIDList()
 
         if vehicles != None:
@@ -219,8 +267,41 @@ def merge_additional_data(vehicle_data, lane_change_file, collision_file):
     return merged_data
 
 
+def add_vehicle(start, end, vehicle_type, vehicle_behavior):
+    """
+    Adds a vehicle to the simulation.
+    """
+    route_id = f"route_{start}_{end}"
+    if route_id not in traci.route.getIDList():
+        traci.route.add(route_id, [start, end])
+    
+    vehicle_id = f"{vehicle_type}_{time.time()}"
+    typeID = f"{vehicle_type}_{vehicle_behavior}" if vehicle_behavior != "" else vehicle_type
+    traci.vehicle.add(vehicle_id, route_id, typeID=typeID, departLane="best", departSpeed="max", departPos="free")
+    
+    return vehicle_id
+
+
 ### ------------------------------ MAIN ------------------------------ ###
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run SUMO simulation and extract vehicle data.")
+    parser.add_argument("--dynamic", type=bool, default=False, help="Whether to use user-defined vehicle data.")
+    parser.add_argument("--start_point", type=str, default="None", help="Starting point of the route.")
+    parser.add_argument("--end_point", type=str, default="None", help="Ending point of the route.")
+    parser.add_argument("--vehicle_type", type=str, default="veh_passenger", help="Type of vehicle to add to the simulation.")
+    parser.add_argument("--behavior", type=str, default="", help="Behavior of the vehicle.")
+
+    args = parser.parse_args()
+    dynamic = args.dynamic
+
+    if dynamic:
+        start_point = ast.literal_eval(args.start_point)
+        end_point = ast.literal_eval(args.end_point)
+        print(f"Parsed start_point: {start_point}, end_point: {end_point}")
+
+        vehicle_type = args.vehicle_type
+        vehicle_behavior = args.behavior
+
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
     # ./../configs/
     MAP = "medium_map"
@@ -237,14 +318,35 @@ if __name__ == "__main__":
     lanechange_path = os.path.join(results_dir_path, lanechange_file)
     collision_path = os.path.join(results_dir_path, collision_file)
 
+    # net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat = extract_network_info(net_path)
+
+    # lat, lon = sumo_to_latlon(4650, 16873, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
+    # print(f"Converted SUMO (4650, 16873) -> ({lat}, {lon})")
+    # 41.8883055530023, -72.55550729559022
+
+    # x, y = latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
+    # print(f"Converted ({lat}, {lon}) -> SUMO ({x}, {y})")
+
+    # lat, lon = sumo_to_latlon(17580, 10000, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
+    # print(f"Converted SUMO (17580, 10000) -> ({lat}, {lon})")
+    # 41.88794303868078, -72.55550729559022
+    # x, y = latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
+    # print(f"Converted ({lat}, {lon}) -> SUMO ({x}, {y})")
+
+
     vehicles = None
-    vehicle_data = simulate_and_extract_metrics(sumocfg_path, net_path, simulation_time=2100, vehicles=vehicles)
+    vehicle_data = simulate_and_extract_metrics(sumocfg_path, net_path, simulation_time=2100, vehicles=vehicles, dynamic=dynamic, 
+                                                start_point=start_point, end_point=end_point, vehicle_type=vehicle_type, vehicle_behavior=vehicle_behavior)
 
     vehicle_data = merge_additional_data(vehicle_data, lanechange_path, collision_path)
 
-    if vehicles == None:
-        vehicle_data.to_csv(results_dir_path + "/vehicle_data.csv", index=False)
+    if dynamic:
+        output_path = os.path.join(results_dir_path, "vehicle_data_" +  vehicle_type + "_" + vehicle_behavior + "_" + str(start_point) + "_" + str(end_point) + ".csv")
+    elif vehicles == None:
+        output_path = os.path.join(results_dir_path, "vehicle_data.csv")
     else:
-        vehicle_data.to_csv(results_dir_path + "/vehicle_data_" + str(vehicles) + ".csv", index=False)
-    print("Vehicle data saved to vehicle_data.csv!")
+        output_path = os.path.join(results_dir_path, "vehicle_data_" + str(vehicles) + ".csv")
+
+    vehicle_data.to_csv(output_path, index=False)
+    print(f"Vehicle data saved to {output_path}!")
     print(vehicle_data.head())

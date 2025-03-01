@@ -3,6 +3,7 @@ from flask_cors import CORS
 import pandas as pd
 import os 
 import subprocess
+import json
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
@@ -38,7 +39,38 @@ def run_simulation():
     Runs the SUMO simulation by executing the SUMO script.
     """
     try:
-        subprocess.run(["python", SUMO_SCRIPT_PATH], check=True)
+        data = request.get_json()
+
+        start_point = data.get('start_point')
+        end_point = data.get('end_point')
+        vehicle_type = data.get('vehicle_type')
+        vehicle_behavior = data.get('vehicle_behavior')
+
+        if not start_point or not end_point or not vehicle_type or not vehicle_behavior:
+            return jsonify({"error": "Missing required parameters"}), 400
+        vehicle_types = {
+            "car": "veh_passenger",
+            "motorcycle": "motorcycle_motorcycle",
+            "truck": "truck_truck",
+        }
+        vehicle_type = vehicle_types[vehicle_type]
+
+        vehicle_behaviors = {
+            "normal": "",
+            "aggressive": "aggressive",
+            "cautious": "cautious",
+        }
+        vehicle_behavior = vehicle_behaviors[vehicle_behavior]
+        print(f"Running command: python {SUMO_SCRIPT_PATH} {json.dumps(data)} --dynamic true --start_point {start_point} --end_point {end_point} --vehicle_type {vehicle_type} --behavior {vehicle_behavior}")
+        subprocess.run([
+            "python", 
+            SUMO_SCRIPT_PATH, 
+            "--dynamic", "true", 
+            "--start_point", str(start_point),
+            "--end_point", str(end_point),
+            "--vehicle_type", vehicle_type, 
+            "--behavior", vehicle_behavior
+        ], check=True)
         return jsonify({"message": "Simulation completed successfully."}), 200
     except subprocess.CalledProcessError as e:
         return jsonify({"error": f"Simulation failed: {str(e)}"}), 500
@@ -250,16 +282,94 @@ def apply_dp():
 @app.route('/dp-vehicle-data', methods=['GET'])
 def get_dp_vehicle_data():
     """
-    Fetches processed vehicle data from the CSV file.
+    Fetches processed dp vehicle data from the CSV file with pagination.
     """
     if not os.path.exists(DP_DATA_FILE_PATH):
         return jsonify({"error": "No data available. Run the simulation first."}), 404
     
-    df = pd.read_csv(DP_DATA_FILE_PATH)
-    df.replace([float('inf'), float('-inf')], None, inplace=True)
-    df.replace(pd.NA, None, inplace=True)
-    print(df.head())
-    return jsonify(df.to_dict(orient='records'))
+    # Get pagination parameters
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=50, type=int)
+    
+    # Calculate offsets
+    offset = (page - 1) * per_page
+    
+    try:
+        # Get total number of rows first (efficiently for large files)
+        with open(DP_DATA_FILE_PATH, 'r') as f:
+            total_rows = sum(1 for _ in f) - 1  # Subtract header
+        
+        # Read the specific chunk with skiprows and nrows
+        df = pd.read_csv(DP_DATA_FILE_PATH, skiprows=offset, nrows=per_page)
+        
+        # Proper handling of NaN, infinity, and NA values for JSON serialization
+        df = df.replace([float('inf'), float('-inf')], "None")
+        df = df.where(pd.notna(df), "None")  # Convert all NaN to None
+        
+        # Convert boolean columns to Python booleans
+        bool_columns = ['Lane_Change', 'Collision']
+        for col in bool_columns:
+            if col in df.columns:
+                df[col] = df[col].map({1: True, 0: False, 'True': True, 'False': False})
+        
+        return jsonify({    
+            "data": df.to_dict(orient='records'),
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": total_rows,
+                "total_pages": (total_rows + per_page - 1) // per_page
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch vehicle data: {str(e)}"}), 500
+    
+@app.route('/dp-vehicle-data/<vehicle_id>', methods=['GET'])
+def get_dp_vehicle_data_by_id(vehicle_id):
+    """
+    Fetches data for a specific vehicle by ID with pagination.
+    """
+    if not os.path.exists(DP_DATA_FILE_PATH):
+        return jsonify({"error": "No data available. Run the simulation first."}), 404
+    
+    # Get pagination parameters
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=50, type=int)
+    
+    # Calculate offsets
+    offset = (page - 1) * per_page
+    
+    try:
+        # Get total number of rows first (efficiently for large files)
+        with open(DP_DATA_FILE_PATH, 'r') as f:
+            total_rows = sum(1 for _ in f) - 1  # Subtract header
+        
+        # Read the specific chunk with skiprows and nrows
+        df = pd.read_csv(DP_DATA_FILE_PATH, skiprows=offset, nrows=per_page)
+        
+        # Proper handling of NaN, infinity, and NA values for JSON serialization
+        df = df.replace([float('inf'), float('-inf')], "None")
+        df = df.where(pd.notna(df), "None")  # Convert all NaN to None
+        
+        # Convert boolean columns to Python booleans
+        bool_columns = ['Lane_Change', 'Collision']
+        for col in bool_columns:
+            if col in df.columns:
+                df[col] = df[col].map({1: True, 0: False, 'True': True, 'False': False})
+        
+        vehicle_df = df[df['Vehicle_ID'].astype(str) == str(vehicle_id)]
+        
+        return jsonify({    
+            "data": vehicle_df.to_dict(orient='records'),
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": len(vehicle_df),
+                "total_pages": (len(vehicle_df) + per_page - 1) // per_page
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch vehicle data: {str(e)}"}), 500
 
 @app.route('/preprocess-data', methods=['POST'])
 def preprocess_data():
