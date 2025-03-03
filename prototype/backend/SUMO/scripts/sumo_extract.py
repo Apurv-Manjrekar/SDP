@@ -9,6 +9,7 @@ import argparse
 import ast
 from sumolib import net
 import time
+import glob
 
 ### ------------------------------ FILE MANAGEMENT ------------------------------ ###
 def decompress_gz(input_gz_file):
@@ -146,14 +147,16 @@ def extract_collision_data(collision_file):
 
 
 ### ------------------------------ SIMULATION ------------------------------ ###
-def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicles=None, dynamic=False, start_point=None, end_point=None, vehicle_type=None, vehicle_behavior=None):
+def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_time=100, vehicles=None, 
+                                 dynamic=False, start_point=None, end_point=None, vehicle_type=None, 
+                                 vehicle_behavior=None, chunk_size=100000, save_interval=200, state_file=None):
     """
     Runs the SUMO simulation and extracts vehicle metrics.
     """
     net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat = extract_network_info(net_path)
 
     traci.start(["sumo", "-c", sumo_cfg, "--start", "--delay", "10", 
-                 "--threads", "8",
+                #  "--threads", "16",
                 # "--device.rerouting.probability", "0", "--device.emissions.probability", "0", 
                 # "--no-internal-links", "1", "--ignore-junction-blocker", "5",
                 # "--collision.mingap-factor", "0", "--collision.action", "remove", "--collision.check-junctions", "0",
@@ -162,11 +165,15 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
                 # "--time-to-teleport", "60", "--time-to-teleport.highways", "30",
                 # "--route-steps", "500",
                 # "--default.action-step-length", "1", "--lateral-resolution", "1",
-                "--log", "LOGFILE",
+                # "--log", "LOGFILE",
                 # "--ignore-route-errors", "--no-warnings", "--no-step-log"
                 ],
-                traceFile="trace.xml",
+                # traceFile="trace.xml",
                 ) # python SUMO
+
+    if state_file != "None" and os.path.exists(state_file):
+        print(f"Loading saved state from {state_file}")
+        traci.simulation.loadState(state_file)
 
     if dynamic:
         print(f"Adding dynamic vehicle from {start_point} to {end_point}")
@@ -177,6 +184,7 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
         print(f"Dynamic vehicle ID: {dynamic_vehicle_id}")
 
     data_rows = []
+    chunk_counter = 0
     if vehicles != None:
         vehicles_remaining = set(vehicles)
         vehicles_in_progress = set()
@@ -222,7 +230,16 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
                 'Time_Gap': time_gap,
                 'Speed_Limit': speed_limit
             })
-        
+
+        if vehicles == None and step % save_interval == 0 and step != 0:
+            traci.simulation.saveState(output_path.replace('.csv', '_state_file.xml'))
+            print(f"Simulation state saved at step {step}")
+            chunk_counter += 1
+            df_chunk = pd.DataFrame(data_rows)
+            output_chunk_path = f"{output_path.replace('.csv', '')}_chunk_{chunk_counter}.csv"
+            df_chunk.to_csv(output_chunk_path, index=False, mode='w', header=chunk_counter == 1)
+            data_rows.clear()      
+
         if vehicles != None:
             for vehicle_id in vehicles_in_progress.copy():
                 if vehicle_id not in vehicle_ids:
@@ -240,35 +257,43 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
                 break
 
     traci.close() # not needed for libsumo
+
+    if vehicles == None and data_rows:
+        df_chunk = pd.DataFrame(data_rows)
+        output_chunk_path = f"{output_path.replace('.csv', '')}_chunk_{chunk_counter + 1}.csv"
+        df_chunk.to_csv(output_chunk_path, index=False, mode='w', header=chunk_counter == 0)
+    else:
+        pd.DataFrame(data_rows).to_csv(output_path, index=False)
     
     return pd.DataFrame(data_rows)
 
 
 ### ------------------------------ DATA MERGING ------------------------------ ###
-def merge_additional_data(vehicle_data, lane_change_file, collision_file):
+def merge_additional_data(vehicle_data, lane_change_data, collision_data):
     """
     Merges lane change and collision data with real-time vehicle data.
     """
-    lane_change_data = extract_lane_change_data(lane_change_file)
     if lane_change_data.empty:
         print("No lane change data found!")
         merged_data = vehicle_data
         merged_data['Lane_Change'] = False
         merged_data['Lane_Change_Reason'] = 'None'
-        merged_data['From_Lane'] = 'None'
-        merged_data['To_Lane'] = 'None'
+        # merged_data['From_Lane'] = 'None'
+        # merged_data['To_Lane'] = 'None'
     else:
+        print("Merging Lane Change Data!")
         merged_data = pd.merge(vehicle_data, lane_change_data, how='left', on=['Time', 'Vehicle_ID'])
         merged_data['Lane_Change_Reason'] = merged_data['Lane_Change_Reason'].fillna('None')
         merged_data['Lane_Change'] = merged_data['From_Lane'].notna()
-        merged_data['From_Lane'] = merged_data['From_Lane'].fillna('None')
-        merged_data['To_Lane'] = merged_data['To_Lane'].fillna('None')
+        merged_data = merged_data.drop(['From_Lane', 'To_Lane'], axis=1)
+        # merged_data['From_Lane'] = merged_data['From_Lane'].fillna('None')
+        # merged_data['To_Lane'] = merged_data['To_Lane'].fillna('None')
     
-    collision_data = extract_collision_data(collision_file)
     if collision_data.empty:
         print("No collision data found!")
         merged_data['Collision'] = False
     else:
+        print("Merging collision data!")
         merged_data = pd.merge(merged_data, collision_data, how='left', on=['Time', 'Vehicle_ID'])
         merged_data['Collision'] = merged_data['Collision'].fillna(False)
     
@@ -289,6 +314,33 @@ def add_vehicle(start, end, vehicle_type, vehicle_behavior):
     
     return vehicle_id
 
+def merge_output_chunks_and_save(output_path):
+    """
+    Merges multiple CSV chunk files into a single CSV file.
+    """
+    output_dir = os.path.dirname(output_path)
+    base_filename = os.path.basename(output_path).replace(".csv", "")
+
+    # Find all chunk files that match the pattern: vehicle_data_chunk_*.csv
+    chunk_files = sorted(glob.glob(os.path.join(output_dir, f"processed_{base_filename}_chunk_*.csv")), key=lambda x: int(x.rsplit("_", 1)[-1].split(".")[0]))
+
+    if not chunk_files:
+        print("No chunk files found. Returning empty DataFrame.")
+        return pd.DataFrame()
+
+    print(f"Merging {len(chunk_files)} chunk files...")
+
+    # Read and concatenate all chunk files
+    dataframes = [pd.read_csv(chunk) for chunk in chunk_files]
+    print(f"Chunks loaded, concatenating chunks!")
+    merged_df = pd.concat(dataframes, ignore_index=True)
+
+    # Save merged file
+    merged_df.to_csv(output_path, index=False)
+    print(f"Merged output saved to {output_path}")
+
+    return merged_df
+
 
 ### ------------------------------ MAIN ------------------------------ ###
 if __name__ == "__main__":
@@ -298,9 +350,11 @@ if __name__ == "__main__":
     parser.add_argument("--end_point", type=str, default="None", help="Ending point of the route.")
     parser.add_argument("--vehicle_type", type=str, default="veh_passenger", help="Type of vehicle to add to the simulation.")
     parser.add_argument("--behavior", type=str, default="", help="Behavior of the vehicle.")
+    parser.add_argument("--state_file", type=str, default="None", help="Path to previous save state file.")
 
     args = parser.parse_args()
     dynamic = args.dynamic
+    state_file = args.state_file
 
     if dynamic:
         start_point = ast.literal_eval(args.start_point)
@@ -349,11 +403,6 @@ if __name__ == "__main__":
 
 
     vehicles = None
-    vehicle_data = simulate_and_extract_metrics(sumocfg_path, net_path, simulation_time=2100, vehicles=vehicles, dynamic=dynamic, 
-                                                start_point=start_point, end_point=end_point, vehicle_type=vehicle_type, vehicle_behavior=vehicle_behavior)
-
-    vehicle_data = merge_additional_data(vehicle_data, lanechange_path, collision_path)
-
     if dynamic:
         output_path = os.path.join(results_dir_path, "dynamic", "vehicle_data_" +  vehicle_type + "_" + vehicle_behavior + "_" + str(start_point) + "_" + str(end_point) + ".csv")
     elif vehicles == None:
@@ -361,6 +410,33 @@ if __name__ == "__main__":
     else:
         output_path = os.path.join(results_dir_path, "vehicle_data_" + str(vehicles) + ".csv")
 
-    vehicle_data.to_csv(output_path, index=False)
+    vehicle_data = simulate_and_extract_metrics(sumocfg_path, net_path, output_path, simulation_time=2100, vehicles=vehicles, 
+                                                dynamic=dynamic, start_point=start_point, end_point=end_point, vehicle_type=vehicle_type, 
+                                                vehicle_behavior=vehicle_behavior, state_file=state_file)
+
+    lanechange_data = extract_lane_change_data(lanechange_path)
+    collision_data = extract_collision_data(collision_path)
+
+    if not dynamic and vehicles == None:
+        output_dir = os.path.dirname(output_path)
+        base_filename = os.path.basename(output_path).replace(".csv", "")
+
+        # Find all chunk files that match the pattern: vehicle_data_chunk_*.csv
+        print("Getting Chunk Files!")
+        chunk_files = sorted(glob.glob(os.path.join(output_dir, f"{base_filename}_chunk_*.csv")), key=lambda x: int(x.rsplit("_", 1)[-1].split(".")[0]))
+        print(f"Adding Lane Change and Collision Data to {len(chunk_files)} Chunks!")
+        for chunk_file in chunk_files:
+            print(f"Chunk: {chunk_file}")
+            df_chunk = pd.read_csv(chunk_file)
+            df_chunk.columns = ['Time', 'Vehicle_ID', 'Speed', 'Acceleration', 'Latitude', 'Longitude',
+                                'Lane', 'Headway_Distance', 'Time_Gap', 'Speed_Limit']
+            df_chunk = merge_additional_data(df_chunk, lanechange_data, collision_data)
+            df_chunk.to_csv(os.path.join(output_dir, f"processed_{os.path.basename(chunk_file)}"), index=False)
+        print('Merging processed chunks!')
+        vehicle_data = merge_output_chunks_and_save(output_path)
+    else:
+        vehicle_data = merge_additional_data(vehicle_data, lanechange_data, collision_data)
+        vehicle_data.to_csv(output_path, index=False)
+
     print(f"Vehicle data saved to {output_path}!")
     print(vehicle_data.head())

@@ -246,7 +246,6 @@ const StaticDashboard = () => {
     }
   };
 
-  
   const handleVehicleChange = (e) => {
     const newValue = e.target.value;
     setSelectedVehicle(newValue);

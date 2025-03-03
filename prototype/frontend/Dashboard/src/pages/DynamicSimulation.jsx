@@ -20,6 +20,7 @@ const DynamicSimulation = () => {
   const [isCalculatingRisk, setIsCalculatingRisk] = useState(false);
   const [riskScores, setRiskScores] = useState({ original: null, dp: null });
   const [currentPage, setCurrentPage] = useState(1);
+  const [dpCurrentPage, setDpCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
@@ -224,6 +225,15 @@ const DynamicSimulation = () => {
     }
   };
 
+  const handlePageChange = (newPage, type) => {
+    if (type === 'vehicle' && newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    } else if (type === 'dp' && newPage >= 1 && newPage <= dpTotalPages) {
+      setDpCurrentPage(newPage);
+    }
+  };
+
+
   return (
     <div>
       <h1>SUMO Simulation</h1>
@@ -354,7 +364,7 @@ const DynamicSimulation = () => {
                 </div>
                 <div className="pagination">
                   <button
-                    onClick={() => handlePageChange(currentPage - 1)}
+                    onClick={() => handlePageChange(currentPage - 1, 'vehicle')}
                     disabled={currentPage === 1}
                   >
                     Previous
@@ -363,7 +373,7 @@ const DynamicSimulation = () => {
                     Page {currentPage} of {totalPages}
                   </span>
                   <button
-                    onClick={() => handlePageChange(currentPage + 1)}
+                    onClick={() => handlePageChange(currentPage + 1, 'vehicle')}
                     disabled={currentPage === totalPages}
                   >
                     Next
@@ -406,7 +416,7 @@ const DynamicSimulation = () => {
                 </div>
                 <div className="pagination">
                   <button
-                    onClick={() => handlePageChange(currentPage - 1)}
+                    onClick={() => handlePageChange(currentPage - 1, 'dp')}
                     disabled={currentPage === 1}
                   >
                     Previous
@@ -415,7 +425,7 @@ const DynamicSimulation = () => {
                     Page {currentPage} of {totalPages}
                   </span>
                   <button
-                    onClick={() => handlePageChange(currentPage + 1)}
+                    onClick={() => handlePageChange(currentPage + 1, 'dp')}
                     disabled={currentPage === totalPages}
                   >
                     Next
