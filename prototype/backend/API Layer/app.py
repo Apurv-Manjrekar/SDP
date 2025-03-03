@@ -166,13 +166,13 @@ def get_vehicle_data_by_id(vehicle_id):
     """
     Fetches data for a specific vehicle by ID with pagination.
     """
-    dynamic = request.args.get('dynamic')
-    if dynamic == True:
-        data_file = request.args.get('data_file')
-        data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file, '.csv')
+    dynamic = request.args.get('dynamic', 'false') == 'true'
+    data_file = request.args.get('data_file')
+
+    if dynamic:    
+        data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
     else:
-        data_file = request.args.get('data_file')
-        data_file_path = os.path.join(RESULTS_DIR_PATH, data_file, '.csv')
+        data_file_path = os.path.join(RESULTS_DIR_PATH, data_file)
     if not os.path.exists(data_file_path):
         return jsonify({"error": "No data available. Run the simulation first."}), 404
 
@@ -604,6 +604,7 @@ def get_risk_score():
     """
     dynamic = request.args.get('dynamic', 'false') == 'true'
     data_file = request.args.get('data_file')
+    vehicle_id = request.args.get('vehicle_id')
 
     if dynamic == True:
         original_risk_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file.replace('.csv', '_risk_scores.csv'))
@@ -619,10 +620,14 @@ def get_risk_score():
 
     if os.path.exists(original_risk_path):
         original_df = pd.read_csv(original_risk_path)
+        if vehicle_id:
+            original_df = original_df[original_df['Vehicle_ID'].astype(str) == str(vehicle_id)]
         result["original"] = original_df.to_dict(orient='records')
     
     if os.path.exists(dp_risk_path):
         dp_df = pd.read_csv(dp_risk_path)
+        if vehicle_id:
+            dp_df = dp_df[dp_df['Vehicle_ID'].astype(str) == str(vehicle_id)]
         result["dp"] = dp_df.to_dict(orient='records')
     
     if result["original"] is None and result["dp"] is None:
