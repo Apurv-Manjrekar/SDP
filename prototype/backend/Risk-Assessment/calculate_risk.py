@@ -45,22 +45,25 @@ def calculate_risk(df):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Calculate risk scores from vehicle data.")
-    parser.add_argument("--dataset", type=str, default="vehicle_data.csv", help="Name of dataset file (e.g., vehicle_data.csv)")
+    parser.add_argument("--dataset", type=str, required=True, help="Full path of dataset file (e.g., /path/to/vehicle_data.csv)")
 
     args = parser.parse_args()
 
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
     results_dir_path = os.path.join(curr_dir_path, "..", "SUMO", "results")
 
-    dataset = args.dataset
+    dataset_path = os.path.abspath(args.dataset)
+    input_dir = os.path.dirname(dataset_path)
 
     # Load the dataset
-    df = pd.read_csv(results_dir_path + "/" + dataset)
+    df = pd.read_csv(dataset_path)
 
     road_risk_scores = calculate_risk(df)
     # risk_score = road_risk_scores["Avg_Risk_Score"][0]
 
     # Save the risk metrics
-    road_risk_scores.to_csv(results_dir_path + "/" + dataset[:-4] + "_risk_scores.csv", index=False)
-    print(f"Risk metrics saved to {dataset[:-4]}_risk_scores.csv!")
+    output_file_path = os.path.join(input_dir, os.path.basename(dataset_path)[:-4] + "_risk_scores.csv")
+    road_risk_scores.to_csv(output_file_path, index=False)
+
+    print(f"Risk metrics saved to {output_file_path}!")
 

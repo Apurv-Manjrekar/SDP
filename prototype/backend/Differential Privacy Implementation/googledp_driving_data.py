@@ -45,17 +45,18 @@ def apply_differential_privacy(df, numeric_columns=["Speed", "Acceleration", "La
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Apply Differential Privacy to vehicle data.")
-    parser.add_argument("--dataset", type=str, default="vehicle_data.csv", help="Name of dataset file (e.g., vehicle_data.csv)")
+    parser.add_argument("--dataset", type=str, required=True, help="Full path to dataset file (e.g., /path/to/vehicle_data.csv)")
 
     args = parser.parse_args()
 
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
     results_dir_path = os.path.join(curr_dir_path, "..", "SUMO", "results")
 
-    dataset = args.dataset
+    dataset_path = os.path.abspath(args.dataset)
+    input_dir = os.path.dirname(dataset_path)
     
     # Load dataset
-    df = pd.read_csv(results_dir_path + "/" + dataset)
+    df = pd.read_csv(dataset_path)
 
     # Define numerical columns that need DP
     numeric_columns = ["Speed", "Acceleration", "Latitude", "Longitude", 
@@ -73,8 +74,9 @@ if __name__ == "__main__":
     # df_dp = df_dp[selected_columns]
 
     # Save and display results
-    df_dp.to_csv(results_dir_path + "/dp_" + dataset, index=False)
-    print("Differentially private dataset saved as dp_vehicle_data.csv!")
+    output_file_path = os.path.join(input_dir, "dp_" + os.path.basename(dataset_path))
+    df_dp.to_csv(output_file_path, index=False)
+    print(f"Differentially private dataset saved as {output_file_path}")
     print(df_dp.head())
 
 

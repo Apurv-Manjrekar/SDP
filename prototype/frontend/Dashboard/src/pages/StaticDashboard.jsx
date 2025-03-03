@@ -101,8 +101,8 @@ const StaticDashboard = () => {
     setIsLoading(true);
     try {
       const endpoint = selectedVehicle === "all" 
-        ? `${API_URL}/vehicle-data?page=${currentPage}&per_page=${perPage}`
-        : `${API_URL}/vehicle-data/${selectedVehicle}?page=${currentPage}&per_page=${perPage}`;
+        ? `${API_URL}/vehicle-data?dynamic=false&data_file=vehicle_data&page=${currentPage}&per_page=${perPage}`
+        : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=vehicle_data&page=${currentPage}&per_page=${perPage}`;
       
       const response = await fetch(endpoint);
       if (!response.ok) {
@@ -144,8 +144,8 @@ const StaticDashboard = () => {
     setIsDpLoading(true);
     try {
       const endpoint = selectedVehicle === "all" 
-        ? `${API_URL}/dp-vehicle-data?page=${dpCurrentPage}&per_page=${perPage}`
-        : `${API_URL}/dp-vehicle-data/${selectedVehicle}?page=${dpCurrentPage}&per_page=${perPage}`;
+      ? `${API_URL}/vehicle-data?dynamic=false&data_file=dp_vehicle_data&page=${dpCurrentPage}&per_page=${perPage}`
+      : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data&page=${dpCurrentPage}&per_page=${perPage}`;
       
       const response = await fetch(endpoint);
       if (!response.ok) {
