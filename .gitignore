@@ -165,3 +165,7 @@ cython_debug/
 node_modules/
 .vite/ 
 .DS_Store
+
+
+results/*_chunk_*.csv
+results/*_state_file.xml
