@@ -1,3 +1,48 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:651ae2b88f26dc6df5a1e529bd4534430f7cdaa3b117fe1e7d89bd73696f474b
-size 2694
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2025-03-03 14:39:39 by Eclipse SUMO sumo Version 1.21.0
+<sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/osm.net.xml.gz"/>
+        <route-files value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/osm.motorcycle.trips.xml,/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/osm.passenger.trips.xml,/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/osm.truck.trips.xml"/>
+        <additional-files value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/osm.vtypes.xml"/>
+    </input>
+
+    <output>
+        <lanechange-output value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/./../../results/lanechange_output.xml"/>
+        <collision-output value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/./../../results/collision_output.xml"/>
+    </output>
+
+    <processing>
+        <ignore-route-errors value="true"/>
+        <tls.actuated.jam-threshold value="30"/>
+    </processing>
+
+    <routing>
+        <device.rerouting.adaptation-steps value="18"/>
+        <device.rerouting.adaptation-interval value="10"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <log value="LOGFILE"/>
+        <duration-log.statistics value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <traci_server>
+        <remote-port value="47917"/>
+    </traci_server>
+
+    <gui_only>
+        <gui-settings-file value="/home/apurv/Github/SDP/prototype/backend/SUMO/scripts/../configs/medium_map/osm.view.xml"/>
+        <start value="true"/>
+        <delay value="10"/>
+    </gui_only>
+
+</sumoConfiguration>
+-->
+
+<collisions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/collision_file.xsd">
+</collisions>
