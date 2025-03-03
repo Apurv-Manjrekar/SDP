@@ -1,37 +1,87 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 const API_URL = "http://localhost:8000";
 
 const StaticDashboard = () => {
   const [vehicles, setVehicles] = useState([]);
+  const [dpVehicles, setDpVehicles] = useState([]);
   const [vehicleList, setVehicleList] = useState([]);
   const [selectedVehicle, setSelectedVehicle] = useState("all");
   const [riskScores, setRiskScores] = useState([]);
   const [dpRiskScores, setDpRiskScores] = useState([]);
+  
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [dpCurrentPage, setDpCurrentPage] = useState(1);
+  const [dpTotalPages, setDpTotalPages] = useState(1);
+  const [riskCurrentPage, setRiskCurrentPage] = useState(1);
+  const [riskTotalPages, setRiskTotalPages] = useState(1);
+  
   const [isLoading, setIsLoading] = useState(false);
+  const [isDpLoading, setIsDpLoading] = useState(false);
+  const [isRiskLoading, setIsRiskLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // Cache to store previously fetched data
+  const [dataCache, setDataCache] = useState({
+    vehicleData: {},     // Structure: { vehicleId_page: data }
+    dpVehicleData: {},   // Structure: { vehicleId_page: data }
+    riskScores: {},      // Structure: { vehicleId_page: data }
+    dpRiskScores: {}     // Structure: { vehicleId: data }
+  });
+  
   const perPage = 50;
 
+  // Fetch vehicle list only once on component mount
   useEffect(() => {
-    // Load the list of unique vehicle IDs for the dropdown
     fetchVehicleList();
-    
-    // Initial data load
-    if (selectedVehicle === "all") {
-      fetchVehicleData(currentPage);
-    } else {
-      fetchVehicleDataById(selectedVehicle, currentPage);
+  }, []);
+
+  // Memoized data fetching function to prevent unnecessary re-renders
+  const fetchData = useCallback(async () => {
+    try {
+      // Create cache keys
+      const vehicleDataKey = `${selectedVehicle}_${currentPage}`;
+      const dpVehicleDataKey = `${selectedVehicle}_${dpCurrentPage}`;
+      const riskScoreKey = `${selectedVehicle}_${riskCurrentPage}`;
+      
+      // Fetch vehicle data if not in cache
+      if (!dataCache.vehicleData[vehicleDataKey]) {
+        await fetchVehicleData();
+      } else {
+        setVehicles(dataCache.vehicleData[vehicleDataKey].data);
+        setTotalPages(dataCache.vehicleData[vehicleDataKey].totalPages);
+      }
+      
+      // Fetch DP vehicle data if not in cache
+      if (!dataCache.dpVehicleData[dpVehicleDataKey]) {
+        await fetchDpVehicleData();
+      } else {
+        setDpVehicles(dataCache.dpVehicleData[dpVehicleDataKey].data);
+        setDpTotalPages(dataCache.dpVehicleData[dpVehicleDataKey].totalPages);
+      }
+      
+      // Fetch risk scores if not in cache
+      if (!dataCache.riskScores[riskScoreKey]) {
+        await fetchRiskScores();
+      } else {
+        setRiskScores(dataCache.riskScores[riskScoreKey].data);
+        setRiskTotalPages(dataCache.riskScores[riskScoreKey].totalPages);
+      }
+      
+      // Always fetch DP risk scores as they don't have pagination
+      await fetchDpRiskScores();
+      
+    } catch (error) {
+      setError(`Failed to fetch data: ${error.message}`);
     }
-    
-    // Fetch risk scores based on selected vehicle
-    if (selectedVehicle === "all") {
-      fetchAllRiskScores();
-    } else {
-      fetchRiskScoreById(selectedVehicle);
-    }
-  }, [currentPage, selectedVehicle]);
+  }, [selectedVehicle, currentPage, dpCurrentPage, riskCurrentPage, dataCache]);
+
+  // Trigger data fetching when vehicle or page changes
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Get list of all unique vehicle IDs for dropdown
   const fetchVehicleList = async () => {
@@ -43,14 +93,18 @@ const StaticDashboard = () => {
       }
     } catch (error) {
       console.error("Failed to fetch vehicle list:", error);
+      setError("Failed to fetch vehicle list. Please refresh the page.");
     }
   };
 
-  const fetchVehicleData = async (page) => {
+  const fetchVehicleData = async () => {
     setIsLoading(true);
-    setError("");
     try {
-      const response = await fetch(`${API_URL}/vehicle-data?page=${page}&per_page=${perPage}`);
+      const endpoint = selectedVehicle === "all" 
+        ? `${API_URL}/vehicle-data?page=${currentPage}&per_page=${perPage}`
+        : `${API_URL}/vehicle-data/${selectedVehicle}?page=${currentPage}&per_page=${perPage}`;
+      
+      const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
@@ -58,10 +112,24 @@ const StaticDashboard = () => {
       const result = await response.json();
       
       if (result.data && Array.isArray(result.data)) {
+        // Update state
         setVehicles(result.data);
         setTotalPages(result.pagination.total_pages);
+        
+        // Update cache
+        const cacheKey = `${selectedVehicle}_${currentPage}`;
+        setDataCache(prevCache => ({
+          ...prevCache,
+          vehicleData: {
+            ...prevCache.vehicleData,
+            [cacheKey]: {
+              data: result.data,
+              totalPages: result.pagination.total_pages
+            }
+          }
+        }));
       } else {
-        setError("No vehicle data available.");
+        setError(`No data found for ${selectedVehicle === "all" ? "any vehicles" : `Vehicle ${selectedVehicle}`}.`);
         setVehicles([]);
       }
     } catch (error) {
@@ -72,13 +140,14 @@ const StaticDashboard = () => {
     }
   };
 
-  const fetchVehicleDataById = async (vehicleId, page) => {
-    setIsLoading(true);
-    setError("");
+  const fetchDpVehicleData = async () => {
+    setIsDpLoading(true);
     try {
-      const response = await fetch(
-        `${API_URL}/vehicle-data/${vehicleId}?page=${page}&per_page=${perPage}`
-      );
+      const endpoint = selectedVehicle === "all" 
+        ? `${API_URL}/dp-vehicle-data?page=${dpCurrentPage}&per_page=${perPage}`
+        : `${API_URL}/dp-vehicle-data/${selectedVehicle}?page=${dpCurrentPage}&per_page=${perPage}`;
+      
+      const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
@@ -86,70 +155,107 @@ const StaticDashboard = () => {
       const result = await response.json();
       
       if (result.data && Array.isArray(result.data)) {
-        setVehicles(result.data);
-        setTotalPages(result.pagination.total_pages);
+        // Update state
+        setDpVehicles(result.data);
+        setDpTotalPages(result.pagination.total_pages);
+        
+        // Update cache
+        const cacheKey = `${selectedVehicle}_${dpCurrentPage}`;
+        setDataCache(prevCache => ({
+          ...prevCache,
+          dpVehicleData: {
+            ...prevCache.dpVehicleData,
+            [cacheKey]: {
+              data: result.data,
+              totalPages: result.pagination.total_pages
+            }
+          }
+        }));
       } else {
-        setError(`No data found for Vehicle ${vehicleId}.`);
-        setVehicles([]);
+        setDpVehicles([]);
       }
     } catch (error) {
-      setError(`Failed to fetch data for Vehicle ${vehicleId}: ${error.message}`);
-      setVehicles([]);
+      console.error("Failed to fetch DP vehicle data:", error);
+      setDpVehicles([]);
     } finally {
-      setIsLoading(false);
+      setIsDpLoading(false);
     }
   };
 
-  const fetchAllRiskScores = async () => {
+  const fetchRiskScores = async () => {
+    setIsRiskLoading(true);
     try {
-      // Fetch regular risk scores
-      const riskResponse = await fetch(`${API_URL}/get-risk-score`);
-      if (!riskResponse.ok) {
-        throw new Error(`API error: ${riskResponse.status}`);
-      }
-      const riskData = await riskResponse.json();
-      setRiskScores(riskData);
-      console.log("Risk scores fetched:", riskData); // Debug log
+      // For risk scores, we'll use pagination client-side
+      const endpoint = selectedVehicle === "all"
+        ? `${API_URL}/get-risk-score`
+        : `${API_URL}/get-risk-score/${selectedVehicle}`;
       
-      // Fetch DP risk scores
-      const dpRiskResponse = await fetch(`${API_URL}/get-dp-risk-score`);
-      if (!dpRiskResponse.ok) {
-        throw new Error(`API error: ${dpRiskResponse.status}`);
+      const response = await fetch(endpoint);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
       }
-      const dpRiskData = await dpRiskResponse.json();
-      setDpRiskScores(dpRiskData);
-      console.log("DP Risk scores fetched:", dpRiskData); // Debug log
+      
+      const allData = await response.json();
+      
+      // Calculate total pages for risk scores
+      const totalRiskPages = Math.ceil(allData.length / perPage);
+      
+      // Paginate the data on the client side
+      const startIndex = (riskCurrentPage - 1) * perPage;
+      const endIndex = startIndex + perPage;
+      const paginatedData = allData.slice(startIndex, endIndex);
+      
+      // Update state
+      setRiskScores(paginatedData);
+      setRiskTotalPages(totalRiskPages || 1);
+      
+      // Update cache
+      const cacheKey = `${selectedVehicle}_${riskCurrentPage}`;
+      setDataCache(prevCache => ({
+        ...prevCache,
+        riskScores: {
+          ...prevCache.riskScores,
+          [cacheKey]: {
+            data: paginatedData,
+            totalPages: totalRiskPages || 1,
+            allData: allData // Store all data for client-side pagination
+          }
+        }
+      }));
     } catch (error) {
       console.error("Failed to fetch risk scores:", error);
-      setError(`Failed to fetch risk scores: ${error.message}`);
+      setRiskScores([]);
+      setRiskTotalPages(1);
+    } finally {
+      setIsRiskLoading(false);
     }
   };
 
-  const fetchRiskScoreById = async (vehicleId) => {
+  const fetchDpRiskScores = async () => {
     try {
-      // Fetch regular risk score for specific vehicle
-      const riskResponse = await fetch(`${API_URL}/get-risk-score/${vehicleId}`);
-      if (riskResponse.ok) {
-        const riskData = await riskResponse.json();
-        setRiskScores(riskData);
-        console.log(`Risk scores for vehicle ${vehicleId}:`, riskData); // Debug log
-      } else {
-        // If no specific risk score is found, set empty array
-        setRiskScores([]);
+      const endpoint = selectedVehicle === "all"
+        ? `${API_URL}/get-dp-risk-score`
+        : `${API_URL}/get-dp-risk-score/${selectedVehicle}`;
+      
+      const response = await fetch(endpoint);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
       }
       
-      // For DP risk scores
-      const dpRiskResponse = await fetch(`${API_URL}/get-dp-risk-score/${vehicleId}`);
-      if (dpRiskResponse.ok) {
-        const dpRiskData = await dpRiskResponse.json();
-        setDpRiskScores(dpRiskData);
-        console.log(`DP Risk scores for vehicle ${vehicleId}:`, dpRiskData); // Debug log
-      } else {
-        setDpRiskScores([]);
-      }
+      const data = await response.json();
+      setDpRiskScores(data);
+      
+      // Update cache
+      setDataCache(prevCache => ({
+        ...prevCache,
+        dpRiskScores: {
+          ...prevCache.dpRiskScores,
+          [selectedVehicle]: data
+        }
+      }));
     } catch (error) {
-      console.error(`Failed to fetch risk scores for Vehicle ${vehicleId}:`, error);
-      setError(`Failed to fetch risk scores: ${error.message}`);
+      console.error("Failed to fetch DP risk scores:", error);
+      setDpRiskScores([]);
     }
   };
 
@@ -157,11 +263,17 @@ const StaticDashboard = () => {
     const newValue = e.target.value;
     setSelectedVehicle(newValue);
     setCurrentPage(1); // Reset to page 1 when changing vehicles
+    setDpCurrentPage(1);
+    setRiskCurrentPage(1);
   };
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
+  const handlePageChange = (newPage, type) => {
+    if (type === 'vehicle' && newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
+    } else if (type === 'dp' && newPage >= 1 && newPage <= dpTotalPages) {
+      setDpCurrentPage(newPage);
+    } else if (type === 'risk' && newPage >= 1 && newPage <= riskTotalPages) {
+      setRiskCurrentPage(newPage);
     }
   };
 
@@ -200,6 +312,7 @@ const StaticDashboard = () => {
           className="block w-full p-2 border border-gray-300 rounded"
           value={selectedVehicle}
           onChange={handleVehicleChange}
+          disabled={isLoading || isDpLoading || isRiskLoading}
         >
           <option value="all">All Vehicles</option>
           {vehicleList.map((vehicle) => (
@@ -212,115 +325,231 @@ const StaticDashboard = () => {
 
       {/* Risk Score Table */}
       <div className="mb-6">
-        <h2 className="text-xl font-bold mb-2">Risk Scores</h2>
-        {riskScores.length > 0 ? (
-          <table className="min-w-full bg-white border border-gray-300">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-2 border-b border-gray-300 text-left">Vehicle</th>
-                <th className="px-4 py-2 border-b border-gray-300 text-left">Risk Score</th>
-                <th className="px-4 py-2 border-b border-gray-300 text-left">DP Risk Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {riskScores.map((item, index) => {
-                const vehicleId = item.Vehicle_ID;
-                return (
-                  <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicleId}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{item.Risk_Score}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">
-                      {getMatchingDpRiskScore(vehicleId)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        ) : (
-          <div className="text-center p-4 border rounded">
-            {isLoading ? "Loading..." : "No risk score data available"}
-          </div>
-        )}
-      </div>
-
-      {/* Pagination Controls */}
-      <div className="flex justify-between items-center mb-4">
-        <button 
-          className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1 || isLoading}
-        >
-          Previous
-        </button>
-        <span>Page {currentPage} of {totalPages || 1}</span>
-        <button 
-          className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages || isLoading || totalPages === 0}
-        >
-          Next
-        </button>
-      </div>
-
-      {/* Loading Indicator */}
-      {isLoading && (
-        <div className="flex justify-center my-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+        <h2 className="text-xl font-bold mb-2 text-center">Risk Scores</h2>
+        
+        {/* Risk Score Pagination Controls */}
+        <div className="flex justify-between items-center mb-4">
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+            onClick={() => handlePageChange(riskCurrentPage - 1, 'risk')}
+            disabled={riskCurrentPage === 1 || isRiskLoading}
+          >
+            Previous
+          </button>
+          <span>Page {riskCurrentPage} of {riskTotalPages || 1}</span>
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+            onClick={() => handlePageChange(riskCurrentPage + 1, 'risk')}
+            disabled={riskCurrentPage === riskTotalPages || isRiskLoading || riskTotalPages === 0}
+          >
+            Next
+          </button>
         </div>
-      )}
-
-      {/* Vehicle Data Table */}
-      <div className="mb-6 overflow-x-auto">
-        <h2 className="text-xl font-bold mb-2">Vehicle Data</h2>
-        {vehicles.length > 0 ? (
-          <table className="min-w-full bg-white border border-gray-300">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Vehicle ID</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Acceleration</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Latitude</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Longitude</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Headway Distance</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time Gap</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed Limit</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">From Lane</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">To Lane</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change Reason</th>
-                <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Collision</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vehicles.map((vehicle, idx) => (
-                <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                  <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{vehicle.Vehicle_ID}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{vehicle.Acceleration}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{vehicle.Latitude}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{vehicle.Longitude}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{vehicle.Lane}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{vehicle.Headway_Distance}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time_Gap}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed_Limit}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change)}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.From_Lane)}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.To_Lane)}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change_Reason)}</td>
-                  <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Collision)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div className="text-center p-4 border rounded">
-            {isLoading ? "Loading..." : "No vehicle data available"}
+        
+        {/* Loading Indicator for Risk Scores */}
+        {isRiskLoading && (
+          <div className="flex justify-center my-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
           </div>
         )}
+        
+        {riskScores.length > 0 ? (
+          <div className="flex justify-center">
+            <table className="w-2/3 bg-white border border-gray-300">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-4 py-2 border-b border-gray-300 text-center">Vehicle</th>
+                  <th className="px-4 py-2 border-b border-gray-300 text-center">Risk Score</th>
+                  <th className="px-4 py-2 border-b border-gray-300 text-center">DP Risk Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {riskScores.map((item, index) => {
+                  const vehicleId = item.Vehicle_ID;
+                  return (
+                    <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                      <td className="px-4 py-2 border-b border-gray-300 text-center">{vehicleId}</td>
+                      <td className="px-4 py-2 border-b border-gray-300 text-center">{item.Risk_Score}</td>
+                      <td className="px-4 py-2 border-b border-gray-300 text-center">
+                        {getMatchingDpRiskScore(vehicleId)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center p-4 border rounded">
+            {isRiskLoading ? "Loading..." : "No risk score data available"}
+          </div>
+        )}
+      </div>
+
+      {/* Vehicle Data Section */}
+      <div className="mb-6">
+        <h2 className="text-xl font-bold mb-2 text-center">Vehicle Data</h2>
+        
+        {/* Pagination Controls */}
+        <div className="flex justify-between items-center mb-4">
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+            onClick={() => handlePageChange(currentPage - 1, 'vehicle')}
+            disabled={currentPage === 1 || isLoading}
+          >
+            Previous
+          </button>
+          <span>Page {currentPage} of {totalPages || 1}</span>
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+            onClick={() => handlePageChange(currentPage + 1, 'vehicle')}
+            disabled={currentPage === totalPages || isLoading || totalPages === 0}
+          >
+            Next
+          </button>
+        </div>
+
+        {/* Loading Indicator */}
+        {isLoading && (
+          <div className="flex justify-center my-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+          </div>
+        )}
+
+        {/* Vehicle Data Table */}
+        <div className="overflow-x-auto">
+          {vehicles.length > 0 ? (
+            <table className="min-w-full bg-white border border-gray-300">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Vehicle ID</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Acceleration</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Latitude</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Longitude</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Headway Distance</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time Gap</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed Limit</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">From Lane</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">To Lane</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change Reason</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Collision</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vehicles.map((vehicle, idx) => (
+                  <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Vehicle_ID}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Acceleration}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Latitude}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Longitude}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Lane}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Headway_Distance}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time_Gap}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed_Limit}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change)}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.From_Lane)}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.To_Lane)}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change_Reason)}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Collision)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="text-center p-4 border rounded">
+              {isLoading ? "Loading..." : "No vehicle data available"}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* DP Vehicle Data Section */}
+      <div className="mb-6">
+        <h2 className="text-xl font-bold mb-2 text-center">Private Vehicle Data</h2>
+        
+        {/* DP Pagination Controls */}
+        <div className="flex justify-between items-center mb-4">
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+            onClick={() => handlePageChange(dpCurrentPage - 1, 'dp')}
+            disabled={dpCurrentPage === 1 || isDpLoading}
+          >
+            Previous
+          </button>
+          <span>Page {dpCurrentPage} of {dpTotalPages || 1}</span>
+          <button 
+            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+            onClick={() => handlePageChange(dpCurrentPage + 1, 'dp')}
+            disabled={dpCurrentPage === dpTotalPages || isDpLoading || dpTotalPages === 0}
+          >
+            Next
+          </button>
+        </div>
+
+        {/* Loading Indicator for DP Data */}
+        {isDpLoading && (
+          <div className="flex justify-center my-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+          </div>
+        )}
+
+        {/* DP Vehicle Data Table */}
+        <div className="overflow-x-auto">
+          {dpVehicles.length > 0 ? (
+            <table className="min-w-full bg-white border border-gray-300">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Vehicle ID</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Acceleration</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Latitude</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Longitude</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Headway Distance</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time Gap</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed Limit</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">From Lane</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">To Lane</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change Reason</th>
+                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Collision</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dpVehicles.map((vehicle, idx) => (
+                  <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Vehicle_ID}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Acceleration}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Latitude}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Longitude}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Lane}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Headway_Distance}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time_Gap}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed_Limit}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change)}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.From_Lane)}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.To_Lane)}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change_Reason)}</td>
+                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Collision)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="text-center p-4 border rounded">
+              {isDpLoading ? "Loading..." : "No private vehicle data available"}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

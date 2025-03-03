@@ -1,0 +1,16 @@
+<vTypeDefinitions>
+    <!-- Passenger Cars -->
+    <vType id="veh_passenger"/>  <!-- Uses SUMO defaults -->
+    <vType id="veh_passenger_cautious" accel="2.0" decel="4.5" sigma="0.2" speedFactor="0.9"/>
+    <vType id="veh_passenger_aggressive" accel="3.5" decel="5.0" sigma="0.8" speedFactor="1.2"/>
+
+    <!-- Motorcycles -->
+    <vType id="motorcycle_motorcycle"/>  <!-- Uses SUMO defaults -->
+    <vType id="motorcycle_motorcycle_cautious" accel="2.5" decel="3.5" sigma="0.1" speedFactor="0.95"/>
+    <vType id="motorcycle_motorcycle_aggressive" accel="3.8" decel="4.5" sigma="0.9" speedFactor="1.3"/>
+
+    <!-- Trucks -->
+    <vType id="truck_truck"/>  <!-- Uses SUMO defaults -->
+    <vType id="truck_truck_cautious" accel="1.0" decel="3.0" sigma="0.2" speedFactor="0.85"/>
+    <vType id="truck_truck_aggressive" accel="1.8" decel="4.0" sigma="0.7" speedFactor="1.1"/>
+</vTypeDefinitions>
