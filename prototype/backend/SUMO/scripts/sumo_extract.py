@@ -152,17 +152,21 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
     """
     net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat = extract_network_info(net_path)
 
-    traci.start(["sumo", "-c", sumo_cfg, "--start", "--delay", "0", "--threads", "16",
-                "--device.rerouting.probability", "0", "--device.emissions.probability", "0", 
-                "--no-internal-links", "1", "--ignore-junction-blocker", "5",
-                "--collision.mingap-factor", "0", "--collision.action", "remove", "--collision.check-junctions", "0",
+    traci.start(["sumo", "-c", sumo_cfg, "--start", "--delay", "10", 
+                 "--threads", "8",
+                # "--device.rerouting.probability", "0", "--device.emissions.probability", "0", 
+                # "--no-internal-links", "1", "--ignore-junction-blocker", "5",
+                # "--collision.mingap-factor", "0", "--collision.action", "remove", "--collision.check-junctions", "0",
                 # "--step-method.ballistic", "1",
-                "--sloppy-insert", "1", "--eager-insert", "0", "--emergency-insert", "1",
-                "--time-to-teleport", "60", "--time-to-teleport.highways", "30",
-                "--route-steps", "500",
-                "--default.action-step-length", "1", "--lateral-resolution", "1",
-                "--ignore-route-errors", "--no-warnings", "--no-step-log"
-                ]) # python SUMO
+                # "--sloppy-insert", "1", "--eager-insert", "0", "--emergency-insert", "1",
+                # "--time-to-teleport", "60", "--time-to-teleport.highways", "30",
+                # "--route-steps", "500",
+                # "--default.action-step-length", "1", "--lateral-resolution", "1",
+                "--log", "LOGFILE",
+                # "--ignore-route-errors", "--no-warnings", "--no-step-log"
+                ],
+                traceFile="trace.xml",
+                ) # python SUMO
 
     if dynamic:
         print(f"Adding dynamic vehicle from {start_point} to {end_point}")
@@ -181,26 +185,30 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, simulation_time=100, vehicl
     for step in range(simulation_time): # run for SIMULATION_TIME seconds
         traci.simulationStep()
         current_time = float(traci.simulation.getTime())
-        # print(f"Time: {current_time}")
+        print(f"Time: {current_time}")
         vehicle_ids = traci.vehicle.getIDList()
 
         if vehicles != None:
             vehicle_ids = [v for v in vehicle_ids if v in vehicles_remaining]
 
         for vehicle_id in vehicle_ids:
-            speed = traci.vehicle.getSpeed(vehicle_id)
-            acceleration = traci.vehicle.getAcceleration(vehicle_id)
-            x, y = traci.vehicle.getPosition(vehicle_id)
-            lat, lon = sumo_to_latlon(x, y, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
-            lane_id = traci.vehicle.getLaneID(vehicle_id)
-            speed_limit = traci.lane.getMaxSpeed(lane_id)
-            
-            leader_info = traci.vehicle.getLeader(vehicle_id)
-            if leader_info:
-                _, headway_distance = leader_info
-                time_gap = headway_distance / speed if speed > 0 else None
-            else:
-                headway_distance, time_gap = None, None
+            try:
+                speed = traci.vehicle.getSpeed(vehicle_id)
+                acceleration = traci.vehicle.getAcceleration(vehicle_id)
+                x, y = traci.vehicle.getPosition(vehicle_id)
+                lat, lon = sumo_to_latlon(x, y, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
+                lane_id = traci.vehicle.getLaneID(vehicle_id)
+                speed_limit = traci.lane.getMaxSpeed(lane_id)
+                
+                leader_info = traci.vehicle.getLeader(vehicle_id)
+                if leader_info:
+                    _, headway_distance = leader_info
+                    time_gap = headway_distance / speed if speed > 0 else None
+                else:
+                    headway_distance, time_gap = None, None
+            except Exception as e:
+                print(f"Error processing vehicle {vehicle_id}: {e} at time {current_time}!")
+                speed = acceleration = lat = lon = lane_id = headway_distance = time_gap = speed_limit = None
 
             data_rows.append({
                 'Time': current_time,
@@ -301,6 +309,12 @@ if __name__ == "__main__":
 
         vehicle_type = args.vehicle_type
         vehicle_behavior = args.behavior
+    else:
+        start_point = "None"
+        end_point = "None"
+
+        vehicle_type = "veh_passenger"
+        vehicle_behavior = ""
 
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
     # ./../configs/
@@ -341,7 +355,7 @@ if __name__ == "__main__":
     vehicle_data = merge_additional_data(vehicle_data, lanechange_path, collision_path)
 
     if dynamic:
-        output_path = os.path.join(results_dir_path, "vehicle_data_" +  vehicle_type + "_" + vehicle_behavior + "_" + str(start_point) + "_" + str(end_point) + ".csv")
+        output_path = os.path.join(results_dir_path, "dynamic", "vehicle_data_" +  vehicle_type + "_" + vehicle_behavior + "_" + str(start_point) + "_" + str(end_point) + ".csv")
     elif vehicles == None:
         output_path = os.path.join(results_dir_path, "vehicle_data.csv")
     else:

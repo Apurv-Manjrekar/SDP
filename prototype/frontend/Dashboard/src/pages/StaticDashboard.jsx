@@ -28,7 +28,6 @@ const StaticDashboard = () => {
     vehicleData: {},     // Structure: { vehicleId_page: data }
     dpVehicleData: {},   // Structure: { vehicleId_page: data }
     riskScores: {},      // Structure: { vehicleId_page: data }
-    dpRiskScores: {}     // Structure: { vehicleId: data }
   });
   
   const perPage = 50;
@@ -66,12 +65,12 @@ const StaticDashboard = () => {
       if (!dataCache.riskScores[riskScoreKey]) {
         await fetchRiskScores();
       } else {
-        setRiskScores(dataCache.riskScores[riskScoreKey].data);
-        setRiskTotalPages(dataCache.riskScores[riskScoreKey].totalPages);
+        const cachedData = dataCache.riskScores[riskScoreKey]
+        setRiskScores(cachedData.originalData);
+        setDpRiskScores(cachedData.dpData)
+        setRiskTotalPages(cachedData.totalPages);
       }
       
-      // Always fetch DP risk scores as they don't have pagination
-      await fetchDpRiskScores();
       
     } catch (error) {
       setError(`Failed to fetch data: ${error.message}`);
@@ -101,8 +100,8 @@ const StaticDashboard = () => {
     setIsLoading(true);
     try {
       const endpoint = selectedVehicle === "all" 
-        ? `${API_URL}/vehicle-data?page=${currentPage}&per_page=${perPage}`
-        : `${API_URL}/vehicle-data/${selectedVehicle}?page=${currentPage}&per_page=${perPage}`;
+        ? `${API_URL}/vehicle-data?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
+        : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`;
       
       const response = await fetch(endpoint);
       if (!response.ok) {
@@ -144,8 +143,8 @@ const StaticDashboard = () => {
     setIsDpLoading(true);
     try {
       const endpoint = selectedVehicle === "all" 
-        ? `${API_URL}/dp-vehicle-data?page=${dpCurrentPage}&per_page=${perPage}`
-        : `${API_URL}/dp-vehicle-data/${selectedVehicle}?page=${dpCurrentPage}&per_page=${perPage}`;
+      ? `${API_URL}/vehicle-data?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
+      : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`;
       
       const response = await fetch(endpoint);
       if (!response.ok) {
@@ -185,28 +184,42 @@ const StaticDashboard = () => {
   const fetchRiskScores = async () => {
     setIsRiskLoading(true);
     try {
-      // For risk scores, we'll use pagination client-side
+      // Use the new combined endpoint with data_file parameter
       const endpoint = selectedVehicle === "all"
-        ? `${API_URL}/get-risk-score`
-        : `${API_URL}/get-risk-score/${selectedVehicle}`;
+        ? `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv`
+        : `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv&vehicle_id=${selectedVehicle}`;
       
       const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
       
-      const allData = await response.json();
+      const result = await response.json();
       
-      // Calculate total pages for risk scores
-      const totalRiskPages = Math.ceil(allData.length / perPage);
+      // Extract original and DP risk scores
+      const originalData = result.original || [];
+      const dpData = result.dp || [];
       
-      // Paginate the data on the client side
+      // Filter by vehicle ID if needed
+      const filteredOriginalData = selectedVehicle === "all" 
+        ? originalData 
+        : originalData.filter(item => String(item.Vehicle_ID) === String(selectedVehicle));
+      
+      const filteredDpData = selectedVehicle === "all"
+        ? dpData
+        : dpData.filter(item => String(item.Vehicle_ID) === String(selectedVehicle));
+      
+      // Calculate total pages for original risk scores (which we'll paginate)
+      const totalRiskPages = Math.ceil(filteredOriginalData.length / perPage);
+      
+      // Paginate the original data on the client side
       const startIndex = (riskCurrentPage - 1) * perPage;
       const endIndex = startIndex + perPage;
-      const paginatedData = allData.slice(startIndex, endIndex);
+      const paginatedOriginalData = filteredOriginalData.slice(startIndex, endIndex);
       
       // Update state
-      setRiskScores(paginatedData);
+      setRiskScores(paginatedOriginalData);
+      setDpRiskScores(filteredDpData);
       setRiskTotalPages(totalRiskPages || 1);
       
       // Update cache
@@ -216,49 +229,24 @@ const StaticDashboard = () => {
         riskScores: {
           ...prevCache.riskScores,
           [cacheKey]: {
-            data: paginatedData,
+            originalData: paginatedOriginalData,
+            dpData: filteredDpData,
             totalPages: totalRiskPages || 1,
-            allData: allData // Store all data for client-side pagination
+            allOriginalData: filteredOriginalData // Store all data for client-side pagination
           }
         }
       }));
     } catch (error) {
       console.error("Failed to fetch risk scores:", error);
       setRiskScores([]);
+      setDpRiskScores([]);
       setRiskTotalPages(1);
     } finally {
       setIsRiskLoading(false);
     }
   };
 
-  const fetchDpRiskScores = async () => {
-    try {
-      const endpoint = selectedVehicle === "all"
-        ? `${API_URL}/get-dp-risk-score`
-        : `${API_URL}/get-dp-risk-score/${selectedVehicle}`;
-      
-      const response = await fetch(endpoint);
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setDpRiskScores(data);
-      
-      // Update cache
-      setDataCache(prevCache => ({
-        ...prevCache,
-        dpRiskScores: {
-          ...prevCache.dpRiskScores,
-          [selectedVehicle]: data
-        }
-      }));
-    } catch (error) {
-      console.error("Failed to fetch DP risk scores:", error);
-      setDpRiskScores([]);
-    }
-  };
-
+  
   const handleVehicleChange = (e) => {
     const newValue = e.target.value;
     setSelectedVehicle(newValue);
