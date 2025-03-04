@@ -156,7 +156,7 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
     net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat = extract_network_info(net_path)
 
     traci.start(["sumo", "-c", sumo_cfg, "--start", "--delay", "10", 
-                #  "--threads", "16",
+                 "--threads", "16",
                 # "--device.rerouting.probability", "0", "--device.emissions.probability", "0", 
                 # "--no-internal-links", "1", "--ignore-junction-blocker", "5",
                 # "--collision.mingap-factor", "0", "--collision.action", "remove", "--collision.check-junctions", "0",
