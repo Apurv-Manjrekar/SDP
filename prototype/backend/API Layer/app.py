@@ -4,6 +4,8 @@ import pandas as pd
 import os 
 import subprocess
 import json
+from ast import literal_eval
+
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
@@ -269,6 +271,8 @@ def apply_dp():
     data = request.get_json()
     dynamic = data.get('dynamic')
     data_file = data.get('data_file')
+    epsilon = data.get('epsilon')
+    # epsilon = literal_eval(data.get('epsilon'))
 
     if dynamic == True:
         data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
@@ -278,7 +282,7 @@ def apply_dp():
         return jsonify({"error": "No data available. Run the simulation first."}), 404
     
     try:
-        subprocess.run(["python", DP_SCRIPT_PATH, "--dataset", data_file_path], check=True)
+        subprocess.run(["python", DP_SCRIPT_PATH, "--dataset", data_file_path, "--epsilon", epsilon], check=True)
         return jsonify({"message": "Differential privacy applied successfully."}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to apply differential privacy: {str(e)}"}), 500

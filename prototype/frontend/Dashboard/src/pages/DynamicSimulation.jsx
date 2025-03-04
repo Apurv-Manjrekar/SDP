@@ -22,6 +22,9 @@ const DynamicSimulation = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [dpCurrentPage, setDpCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [dpTotalPages, setDpTotalPages] = useState(1);
+
+  const [epsilon, setEpsilon] = useState(5)
 
   useEffect(() => {
     fetchVehicleList();
@@ -47,12 +50,16 @@ const DynamicSimulation = () => {
 
   useEffect(() => {
     if (selectedVehicle) {
+      setCurrentPage(1);
+      setDpCurrentPage(1);
       fetchVehicleData();
       setIsDpApplied(false);
       setDpVehicleData([]);
+      fetchDpVehicleData();
       setRiskScores({ original: null, dp: null });
+      fetchRiskScores();
     }
-  }, [selectedVehicle, currentPage]);
+  }, [selectedVehicle, currentPage, dpCurrentPage]);
 
   const fetchVehicleData = async () => {
     if (!selectedVehicle) return;
@@ -84,17 +91,21 @@ const DynamicSimulation = () => {
     try {
       const dpFileName = `dp_${selectedVehicle}`;
       const response = await fetch(
-        `http://localhost:8000/vehicle-data?dynamic=true&data_file=${dpFileName}&page=${currentPage}&per_page=50`
+        `http://localhost:8000/vehicle-data?dynamic=true&data_file=${dpFileName}&page=${dpCurrentPage}&per_page=50`
       );
       if (response.ok) {
         const data = await response.json();
         setDpVehicleData(data.data);
+        setDpTotalPages(data.pagination.total_pages)
+        setIsDpApplied(true)
       } else {
         const errorData = await response.json();
         console.error("Failed to fetch DP vehicle data:", errorData.error);
+        setDpVehicleData([]);
       }
     } catch (err) {
       console.error("Error fetching DP vehicle data:", err);
+      setDpVehicleData([]);
     } finally {
       setIsLoadingData(false);
     }
@@ -104,10 +115,12 @@ const DynamicSimulation = () => {
     if (isDpApplied) {
       fetchDpVehicleData();
     }
-  }, [isDpApplied, currentPage]);
+  }, [isDpApplied, dpCurrentPage]);
 
   const applyDifferentialPrivacy = async () => {
     if (!selectedVehicle) return;
+
+    setIsDpApplied(false);
     
     setIsApplyingDP(true);
     try {
@@ -119,6 +132,7 @@ const DynamicSimulation = () => {
         body: JSON.stringify({
           dynamic: true,
           data_file: selectedVehicle,
+          epsilon: epsilon.toString(),
         }),
       });
       
@@ -182,9 +196,11 @@ const DynamicSimulation = () => {
       } else {
         const errorData = await response.json();
         console.error("Failed to fetch risk scores:", errorData.error);
+        setRiskScores({ original: null, dp: null });
       }
     } catch (err) {
       console.error("Error fetching risk scores:", err);
+      setRiskScores({ original: null, dp: null });
     }
   };
 
@@ -320,6 +336,17 @@ const DynamicSimulation = () => {
               )}
             </select>
           </label>
+          {/* Slider for Epsilon */}
+          <label htmlFor="epsilon-slider">Epsilon (Differential Privacy): {epsilon}</label>
+          <input
+            type="range"
+            id="epsilon-slider"
+            min="0.1"
+            max="10"
+            step="0.1"
+            value={epsilon}
+            onChange={(e) => setEpsilon(parseFloat(e.target.value))}
+          />
           <button
             onClick={applyDifferentialPrivacy}
             disabled={!selectedVehicle || isApplyingDP}
@@ -416,17 +443,17 @@ const DynamicSimulation = () => {
                 </div>
                 <div className="pagination">
                   <button
-                    onClick={() => handlePageChange(currentPage - 1, 'dp')}
-                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(dpCurrentPage - 1, 'dp')}
+                    disabled={dpCurrentPage === 1}
                   >
                     Previous
                   </button>
                   <span>
-                    Page {currentPage} of {totalPages}
+                    Page {dpCurrentPage} of {dpTotalPages}
                   </span>
                   <button
-                    onClick={() => handlePageChange(currentPage + 1, 'dp')}
-                    disabled={currentPage === totalPages}
+                    onClick={() => handlePageChange(dpCurrentPage + 1, 'dp')}
+                    disabled={dpCurrentPage === dpTotalPages}
                   >
                     Next
                   </button>
