@@ -1,5 +1,7 @@
-import React from "react";
+import React from "react"; 
 import { Link } from "react-router-dom";
+import HartfordLogo from "../assets/hartford-logo.png";
+import UConnLogo from "../assets/uconn-logo.png";
 
 const Home = () => {
   return (
@@ -10,6 +12,19 @@ const Home = () => {
           Learn how differential privacy protects data while maintaining statistical utility.
         </Link>
       </p>
+      
+      <div className="absolute top-0 left-0 flex items-center gap-8 p-2">
+        <img 
+          src={HartfordLogo} 
+          alt="Hartford" 
+          className="w-16 h-auto ml-1" 
+        />
+        <img 
+          src={UConnLogo} 
+          alt="UConn" 
+          className="w-16 h-auto" 
+        />
+      </div>
     </div>
   );
 };
