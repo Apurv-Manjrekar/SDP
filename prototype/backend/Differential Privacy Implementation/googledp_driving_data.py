@@ -6,12 +6,18 @@ import argparse
 from ast import literal_eval
 
 
-def calculate_sensitivity(df, column):
+def calculate_continous_sensitivity(df, column):
     """
     Calculates the sensitivity of a given numerical column.
     Sensitivity = max(column) - min(column)
     """
     return df[column].max() - df[column].min()
+
+def calculate_percentile_sensitivity(df, column):
+    return df[column].quantile(0.75) - df[column].quantile(0.25)
+
+def calculate_location_sensitivity(df, column):
+    return df[column].dropna().diff().abs().max()
 
 def add_laplace_noise(value, sensitivity, epsilon):
     """
@@ -33,14 +39,38 @@ def apply_differential_privacy(df, numeric_columns=["Speed", "Acceleration", "La
     pd.DataFrame: DataFrame with DP-applied columns.
     """
     df_copy = df.copy()  # Avoid modifying original data
-    
+
+    senstivities = {}
     for column in numeric_columns:
         if column in df_copy.columns:
-            sensitivity = calculate_sensitivity(df_copy, column)
-            print(f"Sensitivity for {column}: {sensitivity}")
+            if column == "Speed" or column == "Acceleration":
+                senstivities[column] = calculate_continous_sensitivity(df_copy, column)
+            elif column == "Latitude" or column == "Latitude":
+                senstivities[column] = calculate_location_sensitivity(df_copy, column)
+            else:
+                senstivities[column] = calculate_percentile_sensitivity(df_copy, column)
+            print(f"Sensitivity for {column}: {senstivities[column]}")
+
+    epsilon_weights = {
+        "Speed": 0.3,
+        "Acceleration": 0.4,
+        "Time_Gap": 0.2,
+        "Latitude": 0.05,
+        "Longitude": 0.05,
+    }
+
+    for column in numeric_columns:
+        if column in df_copy.columns:
+            column_sensitivity = senstivities[column]
+            column_epsilon = epsilon * epsilon_weights[column]
+
+            noise = column_sensitivity / column_epsilon
+
+            print(f"Epsilon for {column}: {column_epsilon}")
+            print(f"Noise for {column}: {noise}")
             
             df_copy[column] = df_copy[column].apply(
-                lambda x: add_laplace_noise(x, sensitivity, epsilon) if pd.notnull(x) else x
+                lambda x: add_laplace_noise(x, column_sensitivity, column_epsilon) if pd.notnull(x) else x
             )
     
     return df_copy
@@ -65,7 +95,9 @@ if __name__ == "__main__":
 
     # Define numerical columns that need DP
     numeric_columns = ["Speed", "Acceleration", "Latitude", "Longitude", 
-                       "Time_Gap", "Headway_Distance"]
+                       "Time_Gap", 
+                    #    "Headway_Distance"
+                       ]
     
     # Get all original columns that are not numeric
     non_numeric_columns = [col for col in df.columns if col not in numeric_columns]
