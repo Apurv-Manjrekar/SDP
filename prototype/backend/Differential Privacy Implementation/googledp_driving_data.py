@@ -151,3 +151,25 @@ if __name__ == "__main__":
 
 # print("Differentially private dataset saved as dp_vehicle_data.csv!")
 # print(df.head())
+
+#######SENSITIVITY
+# def calculate_sensitivity(df, column):
+#     # Constraint-based sensitivity for fields with known limits
+#     # constraint_sens = {
+#     #     "Speed": 120,          # Maximum speed limit (0-120 km/h)
+#     #     "Acceleration": 20,    # Maximum acceleration/deceleration (m/s²)
+#     #     "Time_Gap": 60,        # Maximum allowed time gap (seconds)
+#     #     "Headway_Distance": 200 # Maximum headway distance (meters)
+#     # }
+#     # If the column is in the constraint sensitivity dictionary, return the corresponding value
+#     # if column in constraint_sens:
+#     #     return constraint_sens[column]
+#     #
+#     # Local sensitivity for geographical coordinates (Latitude, Longitude)
+#     # if column in ["Latitude", "Longitude"]:
+#     #     # Calculate the absolute differences between consecutive values
+#     #     diffs = np.abs(df[column].diff().dropna())
+#     #     # Return the 95th percentile of differences to avoid outliers
+#     #     return np.percentile(diffs, 95) if not diffs.empty else 0.0
+#     # Default to global sensitivity
+#     return df[column].max() - df[column].min()
