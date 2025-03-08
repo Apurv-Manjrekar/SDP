@@ -25,12 +25,9 @@ a:hover {
 body {
   margin: 0;
   display: flex;
-  justify-content: center; /* Center horizontally */
-  align-items: center; /* Center vertically */
   min-height: 100vh;
   background-color: #ffffff; /* White background */
   color: black; /* Black text */
-  text-align: center; /* Center text */
 }
 
 h1 {
@@ -70,4 +67,61 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+.sidebar {
+  width: 250px; /* Adjust width as needed */
+  height: 100vh; /* Full height */
+  position: fixed; /* Fix it to the left */
+  top: 0;
+  left: 0;
+  background: #58595a;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding-top: 10px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  padding: 10px;
+}
+.logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px; /* Space between logos */
+  padding: 10px;
+}
+
+.logo-icon img {
+  max-width: 80px; /* Limit max width */
+  height: auto; /* Maintain aspect ratio */
+  object-fit: contain; /* Ensure image fits without stretching */
+}
+
+.menu-list {
+  height: 88vh;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  font-size: 1rem;
+  position: relative;
+  background: #e4e4e4;
+}
+.content {
+  margin-left: 250px; /* Push content to the right */
+  padding: 40px; /* Add padding for better spacing */
+  width: calc(100vw - 250px); /* Take full remaining width */
+  min-height: 100vh; /* Ensure it stretches to full height */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Align content to the left */
+  text-align: center; /* Prevent forced text centering */
+  overflow-x: hidden; /* Prevent unnecessary horizontal scroll */
+  overflow-y: auto; /* Allow vertical scrolling only if needed */
+  box-sizing: border-box; /* Ensure padding doesn't shrink the content */
 }

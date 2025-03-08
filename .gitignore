@@ -169,3 +169,6 @@ node_modules/
 
 results/*_chunk_*.csv
 results/*_state_file.xml
+
+vehicle_data.csv
+dp_vehicle_data.csv
