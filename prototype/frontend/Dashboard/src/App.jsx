@@ -1,37 +1,86 @@
-import React, { useState, useEffect } from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import { Layout } from "antd";
+import { Routes, Route } from "react-router-dom";
+import Logo from "./components/Logo";
+import MenuList from "./components/MenuList";
 import Home from "./pages/Home";
 import StaticDashboard from "./pages/StaticDashboard";
 import DynamicSimulation from "./pages/DynamicSimulation";
 import LearnMore from "./pages/LearnMore";
 
+const { Header, Sider, Content } = Layout;
+
 const App = () => {
   return (
-    <div>
-      <nav className="bg-gray-800 p-4 text-white">
-        <div className="container mx-auto flex justify-between">
-          <h1 className="text-xl font-bold">Differential Privacy Dashboard</h1>
-          <div>
-            <Link to="/" className="px-4">Home</Link>
-            <span className="text-gray-500">|</span>
-            <Link to="/static-dashboard" className="px-4">Static Dashboard</Link>
-            <span className="text-gray-500">|</span>
-            <Link to="/dynamic-simulation" className="px-4">Dynamic Simulation</Link>
-          </div>
-        </div>
-      </nav>
-
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/static-dashboard" element={<StaticDashboard />} />
-        <Route path="/dynamic-simulation" element={<DynamicSimulation />} />
-        <Route path="/learn-more" element={<LearnMore />} />
-      </Routes>
-    </div>
+    <Layout>
+      <Sider className="sidebar">
+        <Logo />
+        <MenuList />
+      </Sider>
+      <Layout>
+        <Header className="header"> {/* You can customize header content here */} </Header>
+        <Content className="content">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/static-dashboard" element={<StaticDashboard />} />
+            <Route path="/dynamic-simulation" element={<DynamicSimulation />} />
+            <Route path="/learn-more" element={<LearnMore />} />
+          </Routes>
+        </Content>
+      </Layout>
+    </Layout>
   );
 };
 
 export default App;
+
+
+
+
+
+
+
+
+
+
+// import React, { useState, useEffect } from "react";
+// import { Routes, Route, Link } from "react-router-dom";
+// import Home from "./pages/Home";
+// import StaticDashboard from "./pages/StaticDashboard";
+// import DynamicSimulation from "./pages/DynamicSimulation";
+// import LearnMore from "./pages/LearnMore";
+
+// const App = () => {
+//   return (
+//     <div>
+//       <nav className="bg-gray-800 p-4 text-white">
+//         <div className="container mx-auto flex justify-between">
+//           <h1 className="text-xl font-bold">Differential Privacy Dashboard</h1>
+//           <div>
+//             <Link to="/" className="px-4">Home</Link>
+//             <span className="text-gray-500">|</span>
+//             <Link to="/static-dashboard" className="px-4">Static Dashboard</Link>
+//             <span className="text-gray-500">|</span>
+//             <Link to="/dynamic-simulation" className="px-4">Dynamic Simulation</Link>
+//           </div>
+//         </div>
+//       </nav>
+
+//       <Routes>
+//         <Route path="/" element={<Home />} />
+//         <Route path="/static-dashboard" element={<StaticDashboard />} />
+//         <Route path="/dynamic-simulation" element={<DynamicSimulation />} />
+//         <Route path="/learn-more" element={<LearnMore />} />
+//       </Routes>
+//     </div>
+//   );
+// };
+
+// export default App;
+
+
+
+
+
 // const RiskDashboard = () => {
 //   const [riskScores, setRiskScores] = useState([]);
 //   const [dpRiskScores, setDpRiskScores] = useState([]);
