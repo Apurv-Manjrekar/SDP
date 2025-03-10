@@ -11,6 +11,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    height: 100%;
     width: 100%;
     max-width: 1000px;
     gap: 20px;
@@ -25,8 +26,8 @@
   }
   
   .map-container {
-    height: 400px;
     width: 100%;
+    aspect-ratio: 2;
     border-radius: 10px;
     overflow: hidden;
     border: 2px solid #ccc;

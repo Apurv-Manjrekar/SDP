@@ -1,14 +1,27 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
+import { DashboardContext } from "./DashboardContext";
+
 
 const API_URL = "http://localhost:8000";
 
 const StaticDashboard = () => {
-  const [vehicles, setVehicles] = useState([]);
-  const [dpVehicles, setDpVehicles] = useState([]);
-  const [vehicleList, setVehicleList] = useState([]);
+  const {
+    vehicles, setVehicles,
+    dpVehicles, setDpVehicles,
+    riskScores, setRiskScores,
+    dpRiskScores, setDpRiskScores,
+    vehicleList, setVehicleList,
+    dataCache, setDataCache
+  } = React.useContext(DashboardContext);
+
+  // const [vehicles, setVehicles] = useState([]);
+  // const [dpVehicles, setDpVehicles] = useState([]);
+  // const [vehicleList, setVehicleList] = useState([]);
+  // const [riskScores, setRiskScores] = useState([]);
+  // const [dpRiskScores, setDpRiskScores] = useState([]);
+
   const [selectedVehicle, setSelectedVehicle] = useState("all");
-  const [riskScores, setRiskScores] = useState([]);
-  const [dpRiskScores, setDpRiskScores] = useState([]);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,13 +35,18 @@ const StaticDashboard = () => {
   const [isDpLoading, setIsDpLoading] = useState(false);
   const [isRiskLoading, setIsRiskLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const useQuery = () => new URLSearchParams(useLocation().search);
+  const query = useQuery();
+  const view = query.get("view"); // e.g., "raw-vehicle-data"
+
   
   // Cache to store previously fetched data
-  const [dataCache, setDataCache] = useState({
-    vehicleData: {},     // Structure: { vehicleId_page: data }
-    dpVehicleData: {},   // Structure: { vehicleId_page: data }
-    riskScores: {},      // Structure: { vehicleId_page: data }
-  });
+  // const [dataCache, setDataCache] = useState({
+  //   vehicleData: {},     // Structure: { vehicleId_page: data }
+  //   dpVehicleData: {},   // Structure: { vehicleId_page: data }
+  //   riskScores: {},      // Structure: { vehicleId_page: data }
+  // });
   
   const perPage = 50;
 
@@ -311,233 +329,238 @@ const StaticDashboard = () => {
       </div>
 
       {/* Risk Score Table */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold mb-2 text-center">Risk Scores</h2>
-        
-        {/* Risk Score Pagination Controls */}
-        <div className="flex justify-between items-center mb-4">
-          <button 
-            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
-            onClick={() => handlePageChange(riskCurrentPage - 1, 'risk')}
-            disabled={riskCurrentPage === 1 || isRiskLoading}
-          >
-            Previous
-          </button>
-          <span>Page {riskCurrentPage} of {riskTotalPages || 1}</span>
-          <button 
-            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
-            onClick={() => handlePageChange(riskCurrentPage + 1, 'risk')}
-            disabled={riskCurrentPage === riskTotalPages || isRiskLoading || riskTotalPages === 0}
-          >
-            Next
-          </button>
+      {view === "risk-scores" && (
+        <div className="mb-6">
+          <h2 className="text-xl font-bold mb-2 text-center">Risk Scores</h2>
+          
+          {/* Risk Score Pagination Controls */}
+          <div className="flex justify-between items-center mb-4">
+            <button 
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+              onClick={() => handlePageChange(riskCurrentPage - 1, 'risk')}
+              disabled={riskCurrentPage === 1 || isRiskLoading}
+            >
+              Previous
+            </button>
+            <span>Page {riskCurrentPage} of {riskTotalPages || 1}</span>
+            <button 
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+              onClick={() => handlePageChange(riskCurrentPage + 1, 'risk')}
+              disabled={riskCurrentPage === riskTotalPages || isRiskLoading || riskTotalPages === 0}
+            >
+              Next
+            </button>
+          </div>
+          
+          {/* Loading Indicator for Risk Scores */}
+          {isRiskLoading && (
+            <div className="flex justify-center my-4">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+            </div>
+          )}
+          
+          {riskScores.length > 0 ? (
+            <div className="flex justify-center">
+              <table className="w-2/3 bg-white border border-gray-300">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-2 border-b border-gray-300 text-center">Vehicle</th>
+                    <th className="px-4 py-2 border-b border-gray-300 text-center">Risk Score</th>
+                    <th className="px-4 py-2 border-b border-gray-300 text-center">DP Risk Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {riskScores.map((item, index) => {
+                    const vehicleId = item.Vehicle_ID;
+                    return (
+                      <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                        <td className="px-4 py-2 border-b border-gray-300 text-center">{vehicleId}</td>
+                        <td className="px-4 py-2 border-b border-gray-300 text-center">{item.Risk_Score}</td>
+                        <td className="px-4 py-2 border-b border-gray-300 text-center">
+                          {getMatchingDpRiskScore(vehicleId)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center p-4 border rounded">
+              {isRiskLoading ? "Loading..." : "No risk score data available"}
+            </div>
+          )}
         </div>
-        
-        {/* Loading Indicator for Risk Scores */}
-        {isRiskLoading && (
-          <div className="flex justify-center my-4">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
-          </div>
-        )}
-        
-        {riskScores.length > 0 ? (
-          <div className="flex justify-center">
-            <table className="w-2/3 bg-white border border-gray-300">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 border-b border-gray-300 text-center">Vehicle</th>
-                  <th className="px-4 py-2 border-b border-gray-300 text-center">Risk Score</th>
-                  <th className="px-4 py-2 border-b border-gray-300 text-center">DP Risk Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {riskScores.map((item, index) => {
-                  const vehicleId = item.Vehicle_ID;
-                  return (
-                    <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                      <td className="px-4 py-2 border-b border-gray-300 text-center">{vehicleId}</td>
-                      <td className="px-4 py-2 border-b border-gray-300 text-center">{item.Risk_Score}</td>
-                      <td className="px-4 py-2 border-b border-gray-300 text-center">
-                        {getMatchingDpRiskScore(vehicleId)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center p-4 border rounded">
-            {isRiskLoading ? "Loading..." : "No risk score data available"}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Vehicle Data Section */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold mb-2 text-center">Vehicle Data</h2>
-        
-        {/* Pagination Controls */}
-        <div className="flex justify-between items-center mb-4">
-          <button 
-            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
-            onClick={() => handlePageChange(currentPage - 1, 'vehicle')}
-            disabled={currentPage === 1 || isLoading}
-          >
-            Previous
-          </button>
-          <span>Page {currentPage} of {totalPages || 1}</span>
-          <button 
-            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
-            onClick={() => handlePageChange(currentPage + 1, 'vehicle')}
-            disabled={currentPage === totalPages || isLoading || totalPages === 0}
-          >
-            Next
-          </button>
-        </div>
-
-        {/* Loading Indicator */}
-        {isLoading && (
-          <div className="flex justify-center my-4">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+      {view === "raw-vehicle-data" && (
+        <div className="mb-6">
+          <h2 className="text-xl font-bold mb-2 text-center">Vehicle Data</h2>
+          
+          {/* Pagination Controls */}
+          <div className="flex justify-between items-center mb-4">
+            <button 
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+              onClick={() => handlePageChange(currentPage - 1, 'vehicle')}
+              disabled={currentPage === 1 || isLoading}
+            >
+              Previous
+            </button>
+            <span>Page {currentPage} of {totalPages || 1}</span>
+            <button 
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+              onClick={() => handlePageChange(currentPage + 1, 'vehicle')}
+              disabled={currentPage === totalPages || isLoading || totalPages === 0}
+            >
+              Next
+            </button>
           </div>
-        )}
 
-        {/* Vehicle Data Table */}
-        <div className="overflow-x-auto">
-          {vehicles.length > 0 ? (
-            <table className="min-w-full bg-white border border-gray-300">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Vehicle ID</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Acceleration</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Latitude</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Longitude</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Headway Distance</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time Gap</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed Limit</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">From Lane</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">To Lane</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change Reason</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Collision</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vehicles.map((vehicle, idx) => (
-                  <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Vehicle_ID}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Acceleration}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Latitude}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Longitude}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Lane}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Headway_Distance}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time_Gap}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed_Limit}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change)}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.From_Lane)}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.To_Lane)}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change_Reason)}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Collision)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="text-center p-4 border rounded">
-              {isLoading ? "Loading..." : "No vehicle data available"}
+          {/* Loading Indicator */}
+          {isLoading && (
+            <div className="flex justify-center my-4">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
             </div>
           )}
-        </div>
-      </div>
 
+          {/* Vehicle Data Table */}
+          <div className="overflow-x-auto">
+            {vehicles.length > 0 ? (
+              <table className="min-w-full bg-white border border-gray-300">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Vehicle ID</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Acceleration</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Latitude</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Longitude</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Headway Distance</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time Gap</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed Limit</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">From Lane</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">To Lane</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change Reason</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Collision</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vehicles.map((vehicle, idx) => (
+                    <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Vehicle_ID}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Acceleration}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Latitude}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Longitude}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Lane}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Headway_Distance}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time_Gap}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed_Limit}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change)}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.From_Lane)}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.To_Lane)}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change_Reason)}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Collision)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center p-4 border rounded">
+                {isLoading ? "Loading..." : "No vehicle data available"}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {/* DP Vehicle Data Section */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold mb-2 text-center">Private Vehicle Data</h2>
-        
-        {/* DP Pagination Controls */}
-        <div className="flex justify-between items-center mb-4">
-          <button 
-            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
-            onClick={() => handlePageChange(dpCurrentPage - 1, 'dp')}
-            disabled={dpCurrentPage === 1 || isDpLoading}
-          >
-            Previous
-          </button>
-          <span>Page {dpCurrentPage} of {dpTotalPages || 1}</span>
-          <button 
-            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
-            onClick={() => handlePageChange(dpCurrentPage + 1, 'dp')}
-            disabled={dpCurrentPage === dpTotalPages || isDpLoading || dpTotalPages === 0}
-          >
-            Next
-          </button>
-        </div>
-
-        {/* Loading Indicator for DP Data */}
-        {isDpLoading && (
-          <div className="flex justify-center my-4">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+      {view === 'dp-vehicle-data' && (
+        <div className="mb-6">
+          <h2 className="text-xl font-bold mb-2 text-center">Private Vehicle Data</h2>
+          
+          {/* DP Pagination Controls */}
+          <div className="flex justify-between items-center mb-4">
+            <button 
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+              onClick={() => handlePageChange(dpCurrentPage - 1, 'dp')}
+              disabled={dpCurrentPage === 1 || isDpLoading}
+            >
+              Previous
+            </button>
+            <span>Page {dpCurrentPage} of {dpTotalPages || 1}</span>
+            <button 
+              className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+              onClick={() => handlePageChange(dpCurrentPage + 1, 'dp')}
+              disabled={dpCurrentPage === dpTotalPages || isDpLoading || dpTotalPages === 0}
+            >
+              Next
+            </button>
           </div>
-        )}
 
-        {/* DP Vehicle Data Table */}
-        <div className="overflow-x-auto">
-          {dpVehicles.length > 0 ? (
-            <table className="min-w-full bg-white border border-gray-300">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Vehicle ID</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Acceleration</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Latitude</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Longitude</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Headway Distance</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time Gap</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed Limit</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">From Lane</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">To Lane</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change Reason</th>
-                  <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Collision</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dpVehicles.map((vehicle, idx) => (
-                  <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Vehicle_ID}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Acceleration}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Latitude}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Longitude}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Lane}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Headway_Distance}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time_Gap}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed_Limit}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change)}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.From_Lane)}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.To_Lane)}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change_Reason)}</td>
-                    <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Collision)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="text-center p-4 border rounded">
-              {isDpLoading ? "Loading..." : "No private vehicle data available"}
+          {/* Loading Indicator for DP Data */}
+          {isDpLoading && (
+            <div className="flex justify-center my-4">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
             </div>
           )}
+
+          {/* DP Vehicle Data Table */}
+          <div className="overflow-x-auto">
+            {dpVehicles.length > 0 ? (
+              <table className="min-w-full bg-white border border-gray-300">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Vehicle ID</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Acceleration</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Latitude</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Longitude</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Headway Distance</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time Gap</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed Limit</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">From Lane</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">To Lane</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Lane Change Reason</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Collision</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dpVehicles.map((vehicle, idx) => (
+                    <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Vehicle_ID}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Acceleration}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Latitude}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Longitude}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Lane}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Headway_Distance}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time_Gap}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed_Limit}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change)}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.From_Lane)}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.To_Lane)}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Lane_Change_Reason)}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{formatValue(vehicle.Collision)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="text-center p-4 border rounded">
+                {isDpLoading ? "Loading..." : "No private vehicle data available"}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
