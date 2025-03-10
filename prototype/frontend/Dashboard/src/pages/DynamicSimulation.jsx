@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from "react-leaflet";
+import { useLocation } from "react-router-dom";
 import L from "leaflet";
 import "./DynamicSimulation.css";
+import 'leaflet/dist/leaflet.css';
 
 const DynamicSimulation = () => {
   const [startPoint, setStartPoint] = useState("");
@@ -33,6 +35,10 @@ const DynamicSimulation = () => {
     [41.645520, -72.797705], // SW corner
     [41.888833, -72.553847], // NE corner
   ];
+
+  const useQuery = () => new URLSearchParams(useLocation().search);
+  const query = useQuery();
+  const view = query.get("view"); // e.g., "raw-vehicle-data"
 
   // useEffect(() => {
   //   if (map) {
@@ -285,6 +291,16 @@ const DynamicSimulation = () => {
     return null;
   };
 
+  const AdjustMapBounds = ({ bounds }) => {
+    const map = useMap();
+  
+    useEffect(() => {
+      map.fitBounds(bounds, { padding: [0, 0] }); // Fit exactly without extra space
+    }, [map, bounds]);
+  
+    return null;
+  };
+
   return (
     <div className="simulation-container">
       <div className="simulation-content">
@@ -294,16 +310,23 @@ const DynamicSimulation = () => {
           <div className="map-container">
             <MapContainer
               bounds={sumoBounds} // Fit map within SUMO boundaries
+              maxBounds={sumoBounds}
+              maxBoundsViscosity={1.0}
               dragging={false} // Allow movement
               touchZoom={false}
               scrollWheelZoom={false}
               doubleClickZoom={false}
               zoomControl={false}
-              style={{ height: "400px", width: "100%" }}
+              style={{ height: "100%", width: "100%" }}
             >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <MapClickHandler />
+              <AdjustMapBounds bounds={sumoBounds} />
 
+              <TileLayer 
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+                bounds={sumoBounds} // Only load tiles inside SUMO area
+                noWrap={true}
+              />
+              <MapClickHandler />
               {startPoint && <Marker position={startPoint}><Popup>Start Point</Popup></Marker>}
               {endPoint && <Marker position={endPoint}><Popup>End Point</Popup></Marker>}
 
@@ -312,64 +335,66 @@ const DynamicSimulation = () => {
           </div>
         </div>
         {/* Simulation Form */}
-        <div className="simulation-form">
-          <h2>Run Simulation</h2>
-          <form onSubmit={handleSubmit}>
-            <div>
-              <label>
-                Start Point:
-                <input
-                  type="text"
-                  value={startPoint}
-                  onChange={(e) => setStartPoint(e.target.value)}
-                  required
-                />
-              </label>
-            </div>
-            <div>
-              <label>
-                End Point:
-                <input
-                  type="text"
-                  value={endPoint}
-                  onChange={(e) => setEndPoint(e.target.value)}
-                  required
-                />
-              </label>
-            </div>
-            <div>
-              <label>
-                Vehicle Type:
-                <select
-                  value={vehicleType}
-                  onChange={(e) => setVehicleType(e.target.value)}
-                >
-                  <option value="car">Car</option>
-                  <option value="motorcycle">Motorcycle</option>
-                  <option value="truck">Truck</option>
-                </select>
-              </label>
-            </div>
-            <div>
-              <label>
-                Vehicle Behavior:
-                <select
-                  value={vehicleBehavior}
-                  onChange={(e) => setVehicleBehavior(e.target.value)}
-                >
-                  <option value="normal">Normal</option>
-                  <option value="aggressive">Aggressive</option>
-                  <option value="cautious">Cautious</option>
-                </select>
-              </label>
-            </div>
-            <div>
-              <button type="submit" disabled={isLoading}>
-                {isLoading ? "Running Simulation..." : "Run Simulation"}
-              </button>
-            </div>
-          </form>
-        </div>
+        {view === "run-simulation" && (
+          <div className="simulation-form">
+            <h2>Run Simulation</h2>
+            <form onSubmit={handleSubmit}>
+              <div>
+                <label>
+                  Start Point:
+                  <input
+                    type="text"
+                    value={startPoint}
+                    onChange={(e) => setStartPoint(e.target.value)}
+                    required
+                  />
+                </label>
+              </div>
+              <div>
+                <label>
+                  End Point:
+                  <input
+                    type="text"
+                    value={endPoint}
+                    onChange={(e) => setEndPoint(e.target.value)}
+                    required
+                  />
+                </label>
+              </div>
+              <div>
+                <label>
+                  Vehicle Type:
+                  <select
+                    value={vehicleType}
+                    onChange={(e) => setVehicleType(e.target.value)}
+                  >
+                    <option value="car">Car</option>
+                    <option value="motorcycle">Motorcycle</option>
+                    <option value="truck">Truck</option>
+                  </select>
+                </label>
+              </div>
+              <div>
+                <label>
+                  Vehicle Behavior:
+                  <select
+                    value={vehicleBehavior}
+                    onChange={(e) => setVehicleBehavior(e.target.value)}
+                  >
+                    <option value="normal">Normal</option>
+                    <option value="aggressive">Aggressive</option>
+                    <option value="cautious">Cautious</option>
+                  </select>
+                </label>
+              </div>
+              <div>
+                <button type="submit" disabled={isLoading}>
+                  {isLoading ? "Running Simulation..." : "Run Simulation"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* Vehicle Data Section */}
         <div className="vehicle-data-section">
@@ -393,171 +418,185 @@ const DynamicSimulation = () => {
                 )}
               </select>
             </label>
-            {/* Slider for Epsilon */}
-            <label htmlFor="epsilon-slider">Epsilon (Differential Privacy): {epsilon}</label>
-            <input
-              type="range"
-              id="epsilon-slider"
-              min="0.1"
-              max="10"
-              step="0.1"
-              value={epsilon}
-              onChange={(e) => setEpsilon(parseFloat(e.target.value))}
-            />
-            <button
-              onClick={applyDifferentialPrivacy}
-              disabled={!selectedVehicle || isApplyingDP}
-            >
-              {isApplyingDP ? "Applying DP..." : "Apply Differential Privacy"}
-            </button>
-            <button
-              onClick={calculateRiskScores}
-              disabled={!isDpApplied || isCalculatingRisk}
-            >
-              {isCalculatingRisk ? "Calculating..." : "Calculate Risk Scores"}
-            </button>
+            {/* Epsilon and Apply DP (only for DP view) */}
+            {view === "dp-simulation-data" && (
+              <div className="dp-controls">
+                <label htmlFor="epsilon-slider">Epsilon (Differential Privacy): {epsilon}</label>
+                <input
+                  type="range"
+                  id="epsilon-slider"
+                  min="0.1"
+                  max="10"
+                  step="0.1"
+                  value={epsilon}
+                  onChange={(e) => setEpsilon(parseFloat(e.target.value))}
+                />
+                <button
+                  onClick={applyDifferentialPrivacy}
+                  disabled={!selectedVehicle || isApplyingDP}
+                >
+                  {isApplyingDP ? "Applying DP..." : "Apply Differential Privacy"}
+                </button>
+              </div>
+            )}
+
+            {/* Risk Score Button (only for Risk view) */}
+            {view === "simulation-risk-scores" && (
+              <button
+                onClick={calculateRiskScores}
+                disabled={!isDpApplied || isCalculatingRisk}
+              >
+                {isCalculatingRisk ? "Calculating..." : "Calculate Risk Scores"}
+              </button>
+            )}
           </div>
 
           {/* Display Original Data */}
-          {selectedVehicle && (
-            <div className="data-display">
-              <h3>Original Vehicle Data</h3>
-              {isLoadingData ? (
-                <p>Loading data...</p>
-              ) : vehicleData.length > 0 ? (
-                <>
-                  <div className="table-container">
-                    <table>
-                      <thead>
-                        <tr>
-                          {Object.keys(vehicleData[0]).map((key) => (
-                            <th key={key}>{key}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {vehicleData.map((row, index) => (
-                          <tr key={index}>
-                            {Object.values(row).map((value, i) => (
-                              <td key={i}>{value?.toString()}</td>
+          {view === "raw-simulation-data" && (
+            selectedVehicle && (
+              <div className="data-display">
+                <h3>Original Vehicle Data</h3>
+                {isLoadingData ? (
+                  <p>Loading data...</p>
+                ) : vehicleData.length > 0 ? (
+                  <>
+                    <div className="table-container">
+                      <table>
+                        <thead>
+                          <tr>
+                            {Object.keys(vehicleData[0]).map((key) => (
+                              <th key={key}>{key}</th>
                             ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="pagination">
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1, 'vehicle')}
-                      disabled={currentPage === 1}
-                    >
-                      Previous
-                    </button>
-                    <span>
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1, 'vehicle')}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <p>No data available.</p>
-              )}
-            </div>
+                        </thead>
+                        <tbody>
+                          {vehicleData.map((row, index) => (
+                            <tr key={index}>
+                              {Object.values(row).map((value, i) => (
+                                <td key={i}>{value?.toString()}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="pagination">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1, 'vehicle')}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </button>
+                      <span>
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1, 'vehicle')}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p>No data available.</p>
+                )}
+              </div>
+            )
           )}
 
           {/* Display DP Data */}
-          {isDpApplied && (
-            <div className="data-display">
-              <h3>Differential Privacy Vehicle Data</h3>
-              {isLoadingData ? (
-                <p>Loading data...</p>
-              ) : dpVehicleData.length > 0 ? (
-                <>
-                  <div className="table-container">
-                    <table>
-                      <thead>
-                        <tr>
-                          {Object.keys(dpVehicleData[0]).map((key) => (
-                            <th key={key}>{key}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dpVehicleData.map((row, index) => (
-                          <tr key={index}>
-                            {Object.values(row).map((value, i) => (
-                              <td key={i}>{value?.toString()}</td>
+          {view === "dp-simulation-data" && (
+            isDpApplied && (
+              <div className="data-display">
+                <h3>Differential Privacy Vehicle Data</h3>
+                {isLoadingData ? (
+                  <p>Loading data...</p>
+                ) : dpVehicleData.length > 0 ? (
+                  <>
+                    <div className="table-container">
+                      <table>
+                        <thead>
+                          <tr>
+                            {Object.keys(dpVehicleData[0]).map((key) => (
+                              <th key={key}>{key}</th>
                             ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="pagination">
-                    <button
-                      onClick={() => handlePageChange(dpCurrentPage - 1, 'dp')}
-                      disabled={dpCurrentPage === 1}
-                    >
-                      Previous
-                    </button>
-                    <span>
-                      Page {dpCurrentPage} of {dpTotalPages}
-                    </span>
-                    <button
-                      onClick={() => handlePageChange(dpCurrentPage + 1, 'dp')}
-                      disabled={dpCurrentPage === dpTotalPages}
-                    >
-                      Next
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <p>No DP data available.</p>
-              )}
-            </div>
+                        </thead>
+                        <tbody>
+                          {dpVehicleData.map((row, index) => (
+                            <tr key={index}>
+                              {Object.values(row).map((value, i) => (
+                                <td key={i}>{value?.toString()}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="pagination">
+                      <button
+                        onClick={() => handlePageChange(dpCurrentPage - 1, 'dp')}
+                        disabled={dpCurrentPage === 1}
+                      >
+                        Previous
+                      </button>
+                      <span>
+                        Page {dpCurrentPage} of {dpTotalPages}
+                      </span>
+                      <button
+                        onClick={() => handlePageChange(dpCurrentPage + 1, 'dp')}
+                        disabled={dpCurrentPage === dpTotalPages}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p>No DP data available.</p>
+                )}
+              </div>
+            )
           )}
 
           {/* Display Risk Scores */}
-          {(riskScores.original || riskScores.dp) && (
-            <div className="risk-scores-display">
-              <h3>Risk Scores</h3>
-              <div className="risk-scores-container">
-                {/* Check if both original and dp are available */}
-                {(riskScores.original && riskScores.dp) && (
-                  <div className="risk-score-section">
-                    <h4>Combined Risk Scores</h4>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Vehicle_ID</th>
-                          <th>Original_Risk_Score</th>
-                          <th>DP_Risk_Score</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {riskScores.original.map((originalRow, index) => {
-                          // Look for the corresponding dp row based on Vehicle_ID
-                          const dpRow = riskScores.dp.find(dpRow => dpRow.Vehicle_ID === originalRow.Vehicle_ID);
-                          return (
-                            <tr key={index}>
-                              <td>{originalRow.Vehicle_ID}</td>
-                              <td>{originalRow.Risk_Score?.toString()}</td>
-                              {/* Check if dpRow exists and display the DP risk score */}
-                              <td>{dpRow ? dpRow.Risk_Score?.toString() : 'No DP Data'}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+          {view === "simulation-risk-scores" && (
+            (riskScores.original || riskScores.dp) && (
+              <div className="risk-scores-display">
+                <h3>Risk Scores</h3>
+                <div className="risk-scores-container">
+                  {/* Check if both original and dp are available */}
+                  {(riskScores.original && riskScores.dp) && (
+                    <div className="risk-score-section">
+                      <h4>Combined Risk Scores</h4>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Vehicle_ID</th>
+                            <th>Original_Risk_Score</th>
+                            <th>DP_Risk_Score</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {riskScores.original.map((originalRow, index) => {
+                            // Look for the corresponding dp row based on Vehicle_ID
+                            const dpRow = riskScores.dp.find(dpRow => dpRow.Vehicle_ID === originalRow.Vehicle_ID);
+                            return (
+                              <tr key={index}>
+                                <td>{originalRow.Vehicle_ID}</td>
+                                <td>{originalRow.Risk_Score?.toString()}</td>
+                                {/* Check if dpRow exists and display the DP risk score */}
+                                <td>{dpRow ? dpRow.Risk_Score?.toString() : 'No DP Data'}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )
           )}
         </div>
 
