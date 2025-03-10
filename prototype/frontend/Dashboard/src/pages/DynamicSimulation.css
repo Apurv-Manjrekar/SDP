@@ -9,8 +9,9 @@
   /* Map & Form Layout */
   .simulation-content {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
     height: 100%;
     width: 100%;
     max-width: 1000px;
@@ -20,17 +21,23 @@
   /* Center Map */
   .map-wrapper {
     display: flex;
-    justify-content: center;
-    width: 100%;
-    max-width: 800px;
+    flex-direction: column;
+    align-items: center;
+    height: 525px;
+    width: 425px;
+    background: #e0e0e0;
+    padding: 1rem;
+    border-radius: 10px;
   }
   
   .map-container {
-    width: 100%;
-    aspect-ratio: 2;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 500px; /* 👈 Try changing this */
+    width: 400px;
     border-radius: 10px;
     overflow: hidden;
-    border: 2px solid #ccc;
   }
   
   /* Form Styling */

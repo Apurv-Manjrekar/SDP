@@ -26,13 +26,13 @@ const MenuList = () => {
         <Menu.Item key="run-simulation">
           <Link to="/dynamic-simulation/?view=run-simulation">Run Simulation</Link>
         </Menu.Item>
-        <Menu.Item key="raw-vehicle-data">
+        <Menu.Item key="raw-simulation-data">
           <Link to="/dynamic-simulation/?view=raw-simulation-data">Raw Simulation Data</Link>
         </Menu.Item>
-        <Menu.Item key="dp-vehicle-data">
+        <Menu.Item key="dp-simulation-data">
           <Link to="/dynamic-simulation/?view=dp-simulation-data">DP Simulation Data</Link>
         </Menu.Item>
-        <Menu.Item key="risk-scores">
+        <Menu.Item key="simulation-risk-scores">
           <Link to="/dynamic-simulation/?view=simulation-risk-scores">Simulation Risk Scores</Link>
         </Menu.Item>
       </Menu.SubMenu>

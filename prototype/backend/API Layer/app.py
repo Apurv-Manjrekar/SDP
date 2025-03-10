@@ -263,6 +263,52 @@ def get_vehicle_data_by_id(vehicle_id):
     except Exception as e:
         return jsonify({"error": f"Failed to fetch vehicle data: {str(e)}"}), 500
 
+@app.route('/vehicle-route', methods=['GET'])
+def get_vehicle_route():
+    """
+    Fetches the route [latitude, longitude] for a data file.
+    """
+    dynamic = request.args.get('dynamic', 'false') == 'true'
+    data_file = request.args.get('data_file')
+
+    if dynamic:    
+        data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
+    else:
+        data_file_path = os.path.join(RESULTS_DIR_PATH, data_file)
+    if not os.path.exists(data_file_path):
+        return jsonify({"error": "No data available. Run the simulation first."}), 404
+    
+    vehicle_route = []
+    try:
+        df = pd.read_csv(data_file_path)
+        vehicle_route = df[['Latitude', 'Longitude']].to_dict(orient='records')
+        return jsonify({"data": vehicle_route}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch vehicle route: {str(e)}"}), 500
+
+@app.route('/vehicle-route/<vehicle_id>', methods=['GET'])
+def get_vehicle_route_by_id(vehicle_id):
+    """
+    Fetches the route [latitude, longitude] for a specific vehicle ID.
+    """
+    dynamic = request.args.get('dynamic', 'false') == 'true'
+    data_file = request.args.get('data_file')
+
+    if dynamic:    
+        data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
+    else:
+        data_file_path = os.path.join(RESULTS_DIR_PATH, data_file)
+    if not os.path.exists(data_file_path):
+        return jsonify({"error": "No data available. Run the simulation first."}), 404
+    
+    vehicle_route = []
+    try:
+        df = pd.read_csv(data_file_path)
+        vehicle_route = df[df['Vehicle_ID'] == vehicle_id][['Latitude', 'Longitude']].to_dict(orient='records')
+        return jsonify({"data": vehicle_route}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch vehicle route: {str(e)}"}), 500
+
 @app.route('/apply-dp', methods=['POST'])
 def apply_dp():
     """
