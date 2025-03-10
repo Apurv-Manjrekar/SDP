@@ -10,6 +10,7 @@ import ast
 from sumolib import net
 import time
 import glob
+import pyproj
 
 ### ------------------------------ FILE MANAGEMENT ------------------------------ ###
 def decompress_gz(input_gz_file):
@@ -41,41 +42,38 @@ def extract_network_info(net_file, is_gz=True):
         raise ValueError("No <location> tag found in the network file.")
 
     net_offset_x, net_offset_y = map(float, location.get("netOffset").split(','))
-    min_lon, min_lat, max_lon, max_lat = map(float, location.get("origBoundary").split(','))
+    # min_lon, min_lat, max_lon, max_lat = map(float, location.get("origBoundary").split(','))
+    proj_parameter = location.get("projParameter")
     
-    return net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat
+    return net_offset_x, net_offset_y, proj_parameter
 
 
-def sumo_to_latlon(x, y, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat):
+def sumo_to_latlon(x, y, net_offset_x, net_offset_y, proj_string):
     """
     Converts SUMO coordinates to real-world latitude and longitude.
     """
-    abs_x = x + net_offset_x
-    abs_y = y + net_offset_y
+    proj = pyproj.Proj(proj_string)
     
-    lon_range = max_lon - min_lon
-    lat_range = max_lat - min_lat
+    x_proj = x - net_offset_x
+    y_proj = y - net_offset_y
     
-    lon = min_lon + (abs_x / net_offset_x) * lon_range
-    lat = min_lat + (abs_y / net_offset_y) * lat_range
+    lon, lat = proj(x_proj, y_proj, inverse=True)
     
     return lat, lon
 
 
-def latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat):
+def latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, proj_string):
     """
     Converts real-world latitude and longitude to SUMO coordinates.
     """
-    lon_range = max_lon - min_lon
-    lat_range = max_lat - min_lat
-    
-    abs_x = ((lon - min_lon) / lon_range) * net_offset_x
-    abs_y = ((lat - min_lat) / lat_range) * net_offset_y
+    proj = pyproj.Proj(proj_string)
 
-    x = abs_x - net_offset_x
-    y = abs_y - net_offset_y
+    x_proj, y_proj = proj(lon, lat)
     
-    return x, y
+    x_sumo = x_proj + net_offset_x
+    y_sumo = y_proj + net_offset_y
+    
+    return x_sumo, y_sumo
 
 
 def get_nearest_edge(lat, lon, net_file):
@@ -84,9 +82,9 @@ def get_nearest_edge(lat, lon, net_file):
     """
     net_data = net.readNet(net_file)
 
-    net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat = extract_network_info(net_file)
+    net_offset_x, net_offset_y, proj_string = extract_network_info(net_file)
 
-    x, y = latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
+    x, y = latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, proj_string)
 
     print(f"Converted ({lat}, {lon}) -> SUMO ({x}, {y})")
 
@@ -96,6 +94,8 @@ def get_nearest_edge(lat, lon, net_file):
         return None
     
     nearest_edge = min(edges, key=lambda edge: edge[1])[0]
+
+    print(f"Nearest edge: {nearest_edge.getID()}")
 
     return nearest_edge.getID()
 
@@ -153,7 +153,7 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
     """
     Runs the SUMO simulation and extracts vehicle metrics.
     """
-    net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat = extract_network_info(net_path)
+    net_offset_x, net_offset_y, proj_string = extract_network_info(net_path)
 
     traci.start(["sumo", "-c", sumo_cfg, "--start", "--delay", "10", 
                  "--threads", "16",
@@ -204,7 +204,7 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
                 speed = traci.vehicle.getSpeed(vehicle_id)
                 acceleration = traci.vehicle.getAcceleration(vehicle_id)
                 x, y = traci.vehicle.getPosition(vehicle_id)
-                lat, lon = sumo_to_latlon(x, y, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
+                lat, lon = sumo_to_latlon(x, y, net_offset_x, net_offset_y, proj_string)
                 lane_id = traci.vehicle.getLaneID(vehicle_id)
                 speed_limit = traci.lane.getMaxSpeed(lane_id)
                 
@@ -386,20 +386,21 @@ if __name__ == "__main__":
     lanechange_path = os.path.join(results_dir_path, lanechange_file)
     collision_path = os.path.join(results_dir_path, collision_file)
 
-    # net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat = extract_network_info(net_path)
+    # net_offset_x, net_offset_y, proj_string = extract_network_info(net_path)
 
-    # lat, lon = sumo_to_latlon(4650, 16873, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
-    # print(f"Converted SUMO (4650, 16873) -> ({lat}, {lon})")
+    # lat, lon = sumo_to_latlon(9266, 12059, net_offset_x, net_offset_y, proj_string)
+    # print(f"Converted SUMO (4671, 16873) -> ({lat}, {lon})")
     # 41.8883055530023, -72.55550729559022
 
-    # x, y = latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
-    # print(f"Converted ({lat}, {lon}) -> SUMO ({x}, {y})")
-
-    # lat, lon = sumo_to_latlon(17580, 10000, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
+    # x, y = latlon_to_sumo(41.798816451975156, -72.68769058609026, net_offset_x, net_offset_y, proj_string)
+    # print(f"Converted ({41.79516821988085}, {-72.73704528808595}) -> SUMO ({x}, {y})")
+    # # [41.79516821988085, -72.73704528808595]_[41.737807947144255, -72.6573944091797].csv
+    # lat, lon = sumo_to_latlon(17580, 10000, net_offset_x, net_offset_y, proj_string)
     # print(f"Converted SUMO (17580, 10000) -> ({lat}, {lon})")
     # 41.88794303868078, -72.55550729559022
-    # x, y = latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, min_lon, min_lat, max_lon, max_lat)
-    # print(f"Converted ({lat}, {lon}) -> SUMO ({x}, {y})")
+
+    # x, y = latlon_to_sumo(41.737807947144255, -72.6573944091797, net_offset_x, net_offset_y, proj_string)
+    # print(f"Converted ({41.737807947144255}, {-72.6573944091797}) -> SUMO ({x}, {y})")
 
 
     vehicles = None

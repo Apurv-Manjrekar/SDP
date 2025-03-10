@@ -10,6 +10,7 @@ const DynamicSimulation = () => {
   const [endPoint, setEndPoint] = useState("");
   const [vehicleType, setVehicleType] = useState("car"); // Default to 'car'
   const [vehicleBehavior, setVehicleBehavior] = useState("normal"); // Default to 'normal'
+  const [vehicleRoute, setVehicleRoute] = useState([]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -36,15 +37,11 @@ const DynamicSimulation = () => {
     [41.888833, -72.553847], // NE corner
   ];
 
+
   const useQuery = () => new URLSearchParams(useLocation().search);
   const query = useQuery();
   const view = query.get("view"); // e.g., "raw-vehicle-data"
 
-  // useEffect(() => {
-  //   if (map) {
-  //     map.fitBounds(sumoBounds);
-  //   }
-  // }, [map]);
 
   useEffect(() => {
     fetchVehicleList();
@@ -55,9 +52,9 @@ const DynamicSimulation = () => {
       const response = await fetch("http://localhost:8000/dynamic-vehicle-list");
       if (response.ok) {
         const data = await response.json();
-        setVehicleList(data);
+        setVehicleList(["Create New Vehicle", ...data]);
         if (data.length > 0 && !selectedVehicle) {
-          setSelectedVehicle(data[0]);
+          setSelectedVehicle(data[0].id);
         }
       } else {
         const errorData = await response.json();
@@ -69,8 +66,20 @@ const DynamicSimulation = () => {
   };
 
   useEffect(() => {
-    if (selectedVehicle) {
+    if (selectedVehicle === "Create New Vehicle") {
+      setStartPoint("");
+      setEndPoint("");
+      setVehicleType("car"); // Default to 'car'
+      setVehicleBehavior("normal"); // Default to 'normal'
+      setVehicleData([]);
+      setVehicleRoute([]);
+      setIsDpApplied(false);
+      setDpVehicleData([]);
+      setRiskScores({ original: null, dp: null });
+    }
+    else if (selectedVehicle) {
       fetchVehicleData();
+      fetchVechicleRoute();
       setIsDpApplied(false);
       setDpVehicleData([]);
       fetchDpVehicleData();
@@ -85,7 +94,7 @@ const DynamicSimulation = () => {
   }, [selectedVehicle]);
 
   const fetchVehicleData = async () => {
-    if (!selectedVehicle) return;
+    if (!selectedVehicle || selectedVehicle === "Create New Vehicle") return;
     
     setIsLoadingData(true);
     try {
@@ -96,10 +105,6 @@ const DynamicSimulation = () => {
         const data = await response.json();
         setVehicleData(data.data);
         setTotalPages(data.pagination.total_pages);
-        if (data.data.length > 0) {
-          setStartPoint([data.data[0].Latitude, data.data[0].Longitude]);
-          setEndPoint([data.data[data.data.length - 1].Latitude, data.data[data.data.length - 1].Longitude]);
-        }
       } else {
         const errorData = await response.json();
         console.error("Failed to fetch vehicle data:", errorData.error);
@@ -111,8 +116,55 @@ const DynamicSimulation = () => {
     }
   };
 
+  const fetchVechicleRoute = async () => {
+    if (!selectedVehicle || selectedVehicle === "Create New Vehicle") return;
+    
+    setIsLoadingData(true);
+    try {
+      const response = await fetch(
+        `http://localhost:8000/vehicle-route?dynamic=true&data_file=${selectedVehicle}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+          const route = data.data
+            .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
+            .map(point => [Number(point.Latitude), Number(point.Longitude)]);
+          setVehicleRoute(route);
+          console.log("Vehicle route received:", data.data);
+          console.log("Filtered route data:", route);
+          if (route.length > 0) {
+            setStartPoint(route[0]);
+            setEndPoint(route[route.length - 1]);
+          }
+        } else {
+          setVehicleRoute([]);
+          setStartPoint("");
+          setEndPoint("");
+        }
+      } else {
+        const errorData = await response.json();
+        console.error("Failed to fetch vehicle route:", errorData.error);
+        setVehicleRoute([]);
+        setStartPoint("");
+        setEndPoint("");
+      }
+    } catch (err) {
+      console.error("Error fetching vehicle route:", err);
+      setVehicleRoute([]);
+      setStartPoint("");
+      setEndPoint("");
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  useEffect(() => {
+    console.log("Current vehicleRoute state:", vehicleRoute);
+  }, [vehicleRoute]);
+
   const fetchDpVehicleData = async () => {
-    if (!selectedVehicle || !isDpApplied) return;
+    if (!selectedVehicle || !isDpApplied || selectedVehicle === "Create New Vehicle") return;
     
     setIsLoadingData(true);
     try {
@@ -178,7 +230,7 @@ const DynamicSimulation = () => {
   };
 
   const calculateRiskScores = async () => {
-    if (!selectedVehicle || !isDpApplied) {
+    if (!selectedVehicle || !isDpApplied || selectedVehicle === "Create New Vehicle") {
       setError("You must apply differential privacy before calculating risk scores.");
       return;
     }
@@ -276,64 +328,97 @@ const DynamicSimulation = () => {
     }
   };
 
-  const vehicleRoute = vehicleData.map(({ Latitude, Longitude }) => [Latitude, Longitude]);
 
   const MapClickHandler = () => {
     useMapEvents({
       click(e) {
-        if (!startPoint) {
-          setStartPoint([e.latlng.lat, e.latlng.lng]);
-        } else if (!endPoint) {
-          setEndPoint([e.latlng.lat, e.latlng.lng]);
+        if (selectedVehicle === "Create New Vehicle") {
+          if (!startPoint) {
+            setStartPoint([e.latlng.lat, e.latlng.lng]);
+          } else if (!endPoint) {
+            setEndPoint([e.latlng.lat, e.latlng.lng]);
+          } else {
+            // Reset if both points are already set
+            setStartPoint([e.latlng.lat, e.latlng.lng]);
+            setEndPoint(null);
+          }
         }
       },
     });
     return null;
   };
 
-  const AdjustMapBounds = ({ bounds }) => {
+  const FitBoundsOnMount = ({ bounds }) => {
     const map = useMap();
   
     useEffect(() => {
-      map.fitBounds(bounds, { padding: [0, 0] }); // Fit exactly without extra space
+      setTimeout(() => {
+        map.fitBounds(bounds, { padding: [20, 20] }); // Fit exactly without extra space
+      }, 100);
     }, [map, bounds]);
   
     return null;
   };
 
+  const MapBoundsFitter = ({ route }) => {
+    const map = useMap();
+    
+    useEffect(() => {
+      if (route && route.length > 1) {
+        try {
+          const bounds = L.latLngBounds(route);
+          map.fitBounds(bounds, { padding: [50, 50] });
+          console.log("Fitting map to bounds:", bounds);
+        } catch (err) {
+          console.error("Error fitting bounds:", err);
+        }
+      }
+    }, [map, route]);
+    
+    return null;
+  };
+
   return (
     <div className="simulation-container">
+      <h1>SUMO Simulation</h1>
       <div className="simulation-content">
-        <h1>SUMO Simulation</h1>
         {/* Map Section */}
-        <div className="map-wrapper">
-          <div className="map-container">
+        {view === "run-simulation" && (
+          <div className="map-wrapper">
+            <div className="map-container">
             <MapContainer
-              bounds={sumoBounds} // Fit map within SUMO boundaries
+              center={[(sumoBounds[0][0] + sumoBounds[1][0])/2, (sumoBounds[0][1] + sumoBounds[1][1])/2]}
+              zoom={13}
               maxBounds={sumoBounds}
-              maxBoundsViscosity={1.0}
-              dragging={false} // Allow movement
-              touchZoom={false}
+              maxBoundsViscosity={1.0} // Prevent dragging outside
               scrollWheelZoom={false}
               doubleClickZoom={false}
-              zoomControl={false}
               style={{ height: "100%", width: "100%" }}
             >
-              <AdjustMapBounds bounds={sumoBounds} />
+                <TileLayer 
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+                />
+                <FitBoundsOnMount bounds={sumoBounds} />
+                <MapClickHandler />
+                {startPoint && (
+                  <Marker position={startPoint}>
+                    <Popup>Start Point</Popup>
+                  </Marker>
+                )}
+                {endPoint && (
+                  <Marker position={endPoint}>
+                    <Popup>End Point</Popup>
+                  </Marker>
+                )}
 
-              <TileLayer 
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
-                bounds={sumoBounds} // Only load tiles inside SUMO area
-                noWrap={true}
-              />
-              <MapClickHandler />
-              {startPoint && <Marker position={startPoint}><Popup>Start Point</Popup></Marker>}
-              {endPoint && <Marker position={endPoint}><Popup>End Point</Popup></Marker>}
-
-              {vehicleRoute.length > 1 && <Polyline positions={vehicleRoute} color="blue" />}
-            </MapContainer>
+                {vehicleRoute.length > 1 && <MapBoundsFitter route={vehicleRoute} />} 
+                {vehicleRoute.length > 1 && (
+                  <Polyline positions={vehicleRoute} color="blue" weight={3} />
+                )}
+              </MapContainer>
+            </div>
           </div>
-        </div>
+        )}
         {/* Simulation Form */}
         {view === "run-simulation" && (
           <div className="simulation-form">
@@ -395,6 +480,7 @@ const DynamicSimulation = () => {
             </form>
           </div>
         )}
+      </div>
 
         {/* Vehicle Data Section */}
         <div className="vehicle-data-section">
@@ -603,7 +689,7 @@ const DynamicSimulation = () => {
         {error && <div style={{ color: "red" }}>Error: {error}</div>}
         {successMessage && <div style={{ color: "green" }}>{successMessage}</div>}
       </div>
-    </div>
+    // </div>
   );
 };
 
