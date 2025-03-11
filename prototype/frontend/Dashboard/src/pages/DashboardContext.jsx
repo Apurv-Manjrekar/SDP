@@ -12,6 +12,8 @@ export const DashboardProvider = ({ children }) => {
     vehicleData: {},
     dpVehicleData: {},
     riskScores: {},
+    vehicleRoute: {},
+    dpVehicleRoute: {}
   });
 
   const value = {

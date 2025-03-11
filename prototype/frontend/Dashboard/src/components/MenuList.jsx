@@ -11,6 +11,9 @@ const MenuList = () => {
       </Menu.Item>
 
       <Menu.SubMenu key="static-dashboard" icon={<HomeOutlined />} title="Static Dashboard">
+        <Menu.Item key="map">
+          <Link to="/static-dashboard/?view=map">Map</Link>
+        </Menu.Item>
         <Menu.Item key="raw-vehicle-data">
           <Link to="/static-dashboard/?view=raw-vehicle-data">Raw Vehicle Data</Link>
         </Menu.Item>

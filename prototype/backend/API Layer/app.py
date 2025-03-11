@@ -279,9 +279,14 @@ def get_vehicle_route():
         return jsonify({"error": "No data available. Run the simulation first."}), 404
     
     vehicle_route = []
+    columns_to_return = ['Latitude', 'Longitude', 'Speed', 'Acceleration', 'Time_Gap']
+
     try:
         df = pd.read_csv(data_file_path)
-        vehicle_route = df[['Latitude', 'Longitude']].to_dict(orient='records')
+        df = df.replace([float('inf'), float('-inf')], "None")
+        df = df.where(pd.notna(df), "None")
+        existing_columns = [col for col in columns_to_return if col in df.columns]
+        vehicle_route = df[existing_columns].to_dict(orient='records')
         return jsonify({"data": vehicle_route}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to fetch vehicle route: {str(e)}"}), 500
@@ -302,9 +307,19 @@ def get_vehicle_route_by_id(vehicle_id):
         return jsonify({"error": "No data available. Run the simulation first."}), 404
     
     vehicle_route = []
+    columns_to_return = ['Latitude', 'Longitude', 'Speed', 'Acceleration', 'Time_Gap']
     try:
-        df = pd.read_csv(data_file_path)
-        vehicle_route = df[df['Vehicle_ID'] == vehicle_id][['Latitude', 'Longitude']].to_dict(orient='records')
+        chunks = []
+        for chunk in pd.read_csv(data_file_path, chunksize=10000):
+            vehicle_chunk = chunk[chunk['Vehicle_ID'].astype(str) == str(vehicle_id)][columns_to_return]
+            chunks.append(vehicle_chunk)
+        if chunks:
+            df = pd.concat(chunks) if len(chunks) > 1 else chunks[0]
+            df = df.replace([float('inf'), float('-inf')], "None")
+            df = df.where(pd.notna(df), "None")
+
+            vehicle_route = df.to_dict(orient='records')
+            
         return jsonify({"data": vehicle_route}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to fetch vehicle route: {str(e)}"}), 500

@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { DashboardContext } from "./DashboardContext";
+import 'leaflet/dist/leaflet.css';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap, Circle, Tooltip, CircleMarker, Rectangle } from "react-leaflet";
+import L from "leaflet";
+import "./DynamicSimulation.css";
 
 
 const API_URL = "http://localhost:8000";
@@ -36,10 +40,20 @@ const StaticDashboard = () => {
   const [isRiskLoading, setIsRiskLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [vehicleRoute, setVehicleRoute] = useState([]);
+  const [dpVehicleRoute, setDpVehicleRoute] = useState([]);
+  const [startPoint, setStartPoint] = useState([]);
+  const [endPoint, setEndPoint] = useState([]);
+
+
   const useQuery = () => new URLSearchParams(useLocation().search);
   const query = useQuery();
   const view = query.get("view"); // e.g., "raw-vehicle-data"
 
+  const sumoBounds = [
+    [41.645520, -72.797705], // SW corner
+    [41.888833, -72.553847], // NE corner
+  ];
   
   // Cache to store previously fetched data
   // const [dataCache, setDataCache] = useState({
@@ -62,6 +76,8 @@ const StaticDashboard = () => {
       const vehicleDataKey = `${selectedVehicle}_${currentPage}`;
       const dpVehicleDataKey = `${selectedVehicle}_${dpCurrentPage}`;
       const riskScoreKey = `${selectedVehicle}_${riskCurrentPage}`;
+      const vehicleRouteKey = `${selectedVehicle}`
+      const dpVehicleRouteKey = `${selectedVehicle}`
       
       // Fetch vehicle data if not in cache
       if (!dataCache.vehicleData[vehicleDataKey]) {
@@ -88,7 +104,17 @@ const StaticDashboard = () => {
         setDpRiskScores(cachedData.dpData)
         setRiskTotalPages(cachedData.totalPages);
       }
-      
+
+      if (!dataCache.vehicleRoute[vehicleRouteKey]) {
+        await fetchVehicleRoute();
+      } else {
+        setVehicleRoute(dataCache.vehicleRoute[vehicleRouteKey].route)
+      }
+      if (!dataCache.dpVehicleRoute[dpVehicleRouteKey]) {
+        await fetchDpVehicleRoute();
+      } else {
+        setVehicleRoute(dataCache.dpVehicleRoute[dpVehicleRouteKey].route)
+      }
       
     } catch (error) {
       setError(`Failed to fetch data: ${error.message}`);
@@ -199,6 +225,113 @@ const StaticDashboard = () => {
     }
   };
 
+  const fetchVehicleRoute = async () => {
+    if(!selectedVehicle || selectedVehicle === "all") return;
+    setIsLoading(true)
+    try {
+      const response = await fetch(
+        `${API_URL}/vehicle-route/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+          const route = data.data
+            .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
+            .map(point => ({
+              lat: Number(point.Latitude),
+              lng: Number(point.Longitude),
+              speed: point.Speed ?? null,
+              acceleration: point.Acceleration ?? null,
+              timeGap: point["Time_Gap"] ?? null
+            }));
+          setVehicleRoute(route);
+          const cacheKey = `${selectedVehicle}`
+          setDataCache(prevCache => ({
+            ...prevCache,
+            vehicleRoute: {
+              ...prevCache.vehicleRoute,
+              [cacheKey]: {
+                route: route,
+              }
+            }
+          }));
+          console.log("Vehicle route received:", data.data);
+          console.log("Filtered route data:", route);
+          if (route.length > 0) {
+            setStartPoint([route[0].lat, route[0].lng]);
+            setEndPoint([route[route.length - 1].lat, route[route.length - 1].lng]);
+          }
+        } else {
+          setVehicleRoute([]);
+          setStartPoint("");
+          setEndPoint("");
+        }
+      } else {
+        const errorData = await response.json();
+        console.error("Failed to fetch vehicle route:", errorData.error);
+        setVehicleRoute([]);
+        setStartPoint("");
+        setEndPoint("");
+      }
+    } catch (err) {
+      console.error("Error fetching vehicle route:", err);
+      setVehicleRoute([]);
+      setStartPoint("");
+      setEndPoint("");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchDpVehicleRoute = async () => {
+    if(!selectedVehicle || selectedVehicle === "all") return;
+    setIsLoading(true)
+    try {
+      const response = await fetch(
+        `${API_URL}/vehicle-route/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+          const route = data.data
+            .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
+            .map(point => ({
+              lat: Number(point.Latitude),
+              lng: Number(point.Longitude),
+              speed: point.Speed ?? null,
+              acceleration: point.Acceleration ?? null,
+              timeGap: point["Time_Gap"] ?? null
+            }));
+          setDpVehicleRoute(route);
+          const cacheKey = `${selectedVehicle}`
+          setDataCache(prevCache => ({
+            ...prevCache,
+            dpVehicleRoute: {
+              ...prevCache.dpVehicleRoute,
+              [cacheKey]: {
+                route: route,
+              }
+            }
+          }));
+          console.log("Dp Vehicle route received:", data.data);
+          console.log("Dp Filtered route data:", route);
+
+        } else {
+          setDpVehicleRoute([]);
+        }
+      } else {
+        const errorData = await response.json();
+        console.error("Failed to fetch Dp vehicle route:", errorData.error);
+        setDpVehicleRoute([]);
+      }
+    } catch (err) {
+      console.error("Error fetching vehicle route:", err);
+      setDpVehicleRoute([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const fetchRiskScores = async () => {
     setIsRiskLoading(true);
     try {
@@ -298,6 +431,76 @@ const StaticDashboard = () => {
     return match ? match.Risk_Score : "N/A";
   };
 
+  const combinedRoute = vehicleRoute.map((point, index) => {
+    const dpPoint = dpVehicleRoute[index] || {};
+    return {
+      lat: point.lat,
+      lng: point.lng,
+      original: {
+        speed: point.speed,
+        acceleration: point.acceleration,
+        timeGap: point.timeGap,
+      },
+      dp: {
+        lat: dpPoint.lat,
+        lng: dpPoint.lng,
+        speed: dpPoint.speed,
+        acceleration: dpPoint.acceleration,
+        timeGap: dpPoint.timeGap,
+      }
+    };
+  });
+
+  const MapClickHandler = () => {
+    useMapEvents({
+      click(e) {
+        if (selectedVehicle === "Create New Vehicle") {
+          if (!startPoint) {
+            setStartPoint([e.latlng.lat, e.latlng.lng]);
+          } else if (!endPoint) {
+            setEndPoint([e.latlng.lat, e.latlng.lng]);
+          } else {
+            // Reset if both points are already set
+            setStartPoint([e.latlng.lat, e.latlng.lng]);
+            setEndPoint(null);
+          }
+        }
+      },
+    });
+    return null;
+  };
+  
+  const FitBoundsOnMount = ({ bounds }) => {
+    const map = useMap();
+  
+    useEffect(() => {
+      setTimeout(() => {
+        map.fitBounds(bounds, { padding: [5, 5] }); // Fit exactly without extra space
+      }, 100);
+    }, [map, bounds]);
+  
+    return null;
+  };
+  
+  const MapBoundsFitter = ({ route }) => {
+    const map = useMap();
+    
+    useEffect(() => {
+      if (route && route.length > 1) {
+        try {
+          const bounds = L.latLngBounds(route);
+          map.fitBounds(bounds, { padding: [50, 50] });
+          console.log("Fitting map to bounds:", bounds);
+        } catch (err) {
+          console.error("Error fitting bounds:", err);
+        }
+      }
+    }, [map, route]);
+    
+    return null;
+  };
+  
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold text-center mb-6">Vehicle Data Dashboard</h1>
@@ -327,6 +530,91 @@ const StaticDashboard = () => {
           ))}
         </select>
       </div>
+
+      {view === "map" && (
+        <div className="map-wrapper">
+          <div className="map-container">
+          <MapContainer
+            center={[(sumoBounds[0][0] + sumoBounds[1][0])/2, (sumoBounds[0][1] + sumoBounds[1][1])/2]}
+            zoom={13}
+            maxBounds={sumoBounds}
+            maxBoundsViscosity={1.0} // Prevent dragging outside
+            scrollWheelZoom={false}
+            doubleClickZoom={false}
+            style={{ height: "100%", width: "100%" }}
+          >
+              <TileLayer 
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+              />
+              <FitBoundsOnMount bounds={sumoBounds} />
+              <MapClickHandler />
+              <Rectangle
+                bounds={sumoBounds}
+                pathOptions={{ color: 'black', weight: 1, fillOpacity: 0 }}
+              />
+
+              {/* Only show route-related elements if data is available */}
+              {vehicleRoute.length > 0 && dpVehicleRoute.length > 0 && (
+                <>
+                  {startPoint && (
+                    <Marker position={startPoint}>
+                      <Popup>Start Point</Popup>
+                    </Marker>
+                  )}
+                  {endPoint && (
+                    <Marker position={endPoint}>
+                      <Popup>End Point</Popup>
+                    </Marker>
+                  )}
+
+                  {vehicleRoute.length > 1 && <MapBoundsFitter route={vehicleRoute} />} 
+                  {combinedRoute.length > 1 && (
+                    <>
+                      <Polyline
+                        positions={combinedRoute.map(p => [p.lat, p.lng])}
+                        color="blue"
+                        weight={3}
+                      />
+
+                      {combinedRoute.map((point, index) => (
+                        <CircleMarker
+                          key={index}
+                          center={[point.lat, point.lng]}
+                          radius={0.01}
+                          color="blue"
+                          opacity={0.5}
+                        >
+                          <Tooltip direction="top" offset={[0, -5]} opacity={1}>
+                            <div style={{ fontSize: "0.75rem" }}>
+                              <strong>Original:</strong>
+                              <div>Speed: {point.original.speed ?? "N/A"} km/h</div>
+                              <div>Acceleration: {point.original.acceleration ?? "N/A"} m/s²</div>
+                              <div>Time Gap: {point.original.timeGap ?? "N/A"} s</div>
+                              <br />
+                              <strong>DP:</strong>
+                              <div>Speed: {point.dp.speed ?? "N/A"} km/h</div>
+                              <div>Acceleration: {point.dp.acceleration ?? "N/A"} m/s²</div>
+                              <div>Time Gap: {point.dp.timeGap ?? "N/A"} s</div>
+                            </div>
+                          </Tooltip>
+                        </CircleMarker>
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
+
+                  {/* {dpVehicleRoute.length > 1 && <MapBoundsFitter route={dpVehicleRoute} />} 
+                  {dpVehicleRoute.length > 1 && (
+                    <Polyline positions={dpVehicleRoute} color="red" weight={3} />
+                  )} */}
+              
+            </MapContainer>
+          </div>
+        </div>
+        )
+      }
+        
 
       {/* Risk Score Table */}
       {view === "risk-scores" && (
