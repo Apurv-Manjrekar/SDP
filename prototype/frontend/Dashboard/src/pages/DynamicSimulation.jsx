@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap, Circle, Tooltip, CircleMarker, Rectangle } from "react-leaflet";
 import { useLocation } from "react-router-dom";
 import L from "leaflet";
 import "./DynamicSimulation.css";
@@ -11,6 +11,7 @@ const DynamicSimulation = () => {
   const [vehicleType, setVehicleType] = useState("car"); // Default to 'car'
   const [vehicleBehavior, setVehicleBehavior] = useState("normal"); // Default to 'normal'
   const [vehicleRoute, setVehicleRoute] = useState([]);
+  const [dpVehicleRoute, setDpVehicleRoute] = useState([]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -73,24 +74,42 @@ const DynamicSimulation = () => {
       setVehicleBehavior("normal"); // Default to 'normal'
       setVehicleData([]);
       setVehicleRoute([]);
-      setIsDpApplied(false);
+      setDpVehicleRoute([]);
+      // setIsDpApplied(false);
       setDpVehicleData([]);
       setRiskScores({ original: null, dp: null });
     }
     else if (selectedVehicle) {
       fetchVehicleData();
       fetchVechicleRoute();
-      setIsDpApplied(false);
+      setDpVehicleRoute([]);
+      fetchDpVehicleRoute();
+      // setIsDpApplied(false);
       setDpVehicleData([]);
       fetchDpVehicleData();
       setRiskScores({ original: null, dp: null });
       fetchRiskScores();
     }
-  }, [selectedVehicle, currentPage, dpCurrentPage]);
+  }, [selectedVehicle, currentPage, dpCurrentPage, isDpApplied]);
 
   useEffect(() => {
+    if (!selectedVehicle) return;
     setCurrentPage(1);
     setDpCurrentPage(1);
+    if (selectedVehicle.includes("veh_passenger")) {
+      setVehicleType("car");
+    } else if (selectedVehicle.includes("truck_truck")) {
+      setVehicleType("truck");
+    } else if (selectedVehicle.includes("motorcycle_motorcycle")) {
+      setVehicleType("motorcycle");
+    }
+    if (selectedVehicle.includes("aggressive")) {
+      setVehicleBehavior("aggressive");
+    } else if (selectedVehicle.includes("cautious")) {
+      setVehicleBehavior("cautious");
+    } else {
+      setVehicleBehavior("normal");
+    }
   }, [selectedVehicle]);
 
   const fetchVehicleData = async () => {
@@ -129,13 +148,19 @@ const DynamicSimulation = () => {
         if (data.data && data.data.length > 0) {
           const route = data.data
             .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
-            .map(point => [Number(point.Latitude), Number(point.Longitude)]);
+            .map(point => ({
+              lat: Number(point.Latitude),
+              lng: Number(point.Longitude),
+              speed: point.Speed ?? null,
+              acceleration: point.Acceleration ?? null,
+              timeGap: point["Time_Gap"] ?? null
+            }));
           setVehicleRoute(route);
           console.log("Vehicle route received:", data.data);
           console.log("Filtered route data:", route);
           if (route.length > 0) {
-            setStartPoint(route[0]);
-            setEndPoint(route[route.length - 1]);
+            setStartPoint([route[0].lat, route[0].lng]);
+            setEndPoint([route[route.length - 1].lat, route[route.length - 1].lng]);
           }
         } else {
           setVehicleRoute([]);
@@ -159,12 +184,55 @@ const DynamicSimulation = () => {
     }
   };
 
+  const fetchDpVehicleRoute = async () => {
+    if (!selectedVehicle || selectedVehicle === "Create New Vehicle") return;
+    
+    setIsLoadingData(true);
+    try {
+      const dpFileName = `dp_${selectedVehicle}`;
+      const response = await fetch(
+        `http://localhost:8000/vehicle-route?dynamic=true&data_file=${dpFileName}`
+      );
+      if (response.ok) {
+        setIsDpApplied(true);
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+          const route = data.data
+            .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
+            .map(point => ({
+              lat: Number(point.Latitude),
+              lng: Number(point.Longitude),
+              speed: point.Speed ?? null,
+              acceleration: point.Acceleration ?? null,
+              timeGap: point["Time_Gap"] ?? null
+            }));
+          setDpVehicleRoute(route);
+          console.log("DP vehicle route received:", data.data);
+          console.log("Filtered DP route data:", route);
+        } else {
+          setDpVehicleRoute([]);
+        }
+      } else {
+        setIsDpApplied(false);
+        const errorData = await response.json();
+        console.error("Failed to fetch DP vehicle route:", errorData.error);
+        setDpVehicleRoute([]);
+      }
+    } catch (err) {
+      console.error("Error fetching DP vehicle route:", err);
+      setDpVehicleRoute([]);
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
   useEffect(() => {
     console.log("Current vehicleRoute state:", vehicleRoute);
-  }, [vehicleRoute]);
+    console.log("Current dpVehicleRoute state:", dpVehicleRoute);
+  }, [vehicleRoute, dpVehicleRoute]);
 
   const fetchDpVehicleData = async () => {
-    if (!selectedVehicle || !isDpApplied || selectedVehicle === "Create New Vehicle") return;
+    if (!selectedVehicle || selectedVehicle === "Create New Vehicle") return;
     
     setIsLoadingData(true);
     try {
@@ -173,13 +241,15 @@ const DynamicSimulation = () => {
         `http://localhost:8000/vehicle-data?dynamic=true&data_file=${dpFileName}&page=${dpCurrentPage}&per_page=50`
       );
       if (response.ok) {
+        setIsDpApplied(true);
         const data = await response.json();
         setDpVehicleData(data.data);
         setDpTotalPages(data.pagination.total_pages)
         setIsDpApplied(true)
       } else {
+        setIsDpApplied(false);
         const errorData = await response.json();
-        console.error("Failed to fetch DP vehicle data:", errorData.error);
+        console.error("Failed to fetch DP vehicle data:", errorData.error, "Make sure you have applied DP!");
         setDpVehicleData([]);
       }
     } catch (err) {
@@ -230,8 +300,8 @@ const DynamicSimulation = () => {
   };
 
   const calculateRiskScores = async () => {
-    if (!selectedVehicle || !isDpApplied || selectedVehicle === "Create New Vehicle") {
-      setError("You must apply differential privacy before calculating risk scores.");
+    if (!selectedVehicle || selectedVehicle === "Create New Vehicle") {
+      setError("Please select a vehicle first.");
       return;
     }
     
@@ -328,6 +398,26 @@ const DynamicSimulation = () => {
     }
   };
 
+  const combinedRoute = vehicleRoute.map((point, index) => {
+    const dpPoint = dpVehicleRoute[index] || {};
+    return {
+      lat: point.lat,
+      lng: point.lng,
+      original: {
+        speed: point.speed,
+        acceleration: point.acceleration,
+        timeGap: point.timeGap,
+      },
+      dp: {
+        lat: dpPoint.lat,
+        lng: dpPoint.lng,
+        speed: dpPoint.speed,
+        acceleration: dpPoint.acceleration,
+        timeGap: dpPoint.timeGap,
+      }
+    };
+  });
+
 
   const MapClickHandler = () => {
     useMapEvents({
@@ -353,7 +443,7 @@ const DynamicSimulation = () => {
   
     useEffect(() => {
       setTimeout(() => {
-        map.fitBounds(bounds, { padding: [20, 20] }); // Fit exactly without extra space
+        map.fitBounds(bounds, { padding: [5, 5] }); // Fit exactly without extra space
       }, 100);
     }, [map, bounds]);
   
@@ -400,6 +490,10 @@ const DynamicSimulation = () => {
                 />
                 <FitBoundsOnMount bounds={sumoBounds} />
                 <MapClickHandler />
+                <Rectangle
+                  bounds={sumoBounds}
+                  pathOptions={{ color: 'black', weight: 1, fillOpacity: 0 }}
+                />
                 {startPoint && (
                   <Marker position={startPoint}>
                     <Popup>Start Point</Popup>
@@ -412,9 +506,44 @@ const DynamicSimulation = () => {
                 )}
 
                 {vehicleRoute.length > 1 && <MapBoundsFitter route={vehicleRoute} />} 
-                {vehicleRoute.length > 1 && (
-                  <Polyline positions={vehicleRoute} color="blue" weight={3} />
+                {combinedRoute.length > 1 && (
+                  <>
+                    <Polyline
+                      positions={combinedRoute.map(p => [p.lat, p.lng])}
+                      color="blue"
+                      weight={3}
+                    />
+
+                    {combinedRoute.map((point, index) => (
+                      <CircleMarker
+                        key={index}
+                        center={[point.lat, point.lng]}
+                        radius={0.01}
+                        color="blue"
+                        opacity={0.5}
+                      >
+                        <Tooltip direction="top" offset={[0, -5]} opacity={1}>
+                          <div style={{ fontSize: "0.75rem" }}>
+                            <strong>Original:</strong>
+                            <div>Speed: {point.original.speed ?? "N/A"} km/h</div>
+                            <div>Acceleration: {point.original.acceleration ?? "N/A"} m/s²</div>
+                            <div>Time Gap: {point.original.timeGap ?? "N/A"} s</div>
+                            <br />
+                            <strong>DP:</strong>
+                            <div>Speed: {point.dp.speed ?? "N/A"} km/h</div>
+                            <div>Acceleration: {point.dp.acceleration ?? "N/A"} m/s²</div>
+                            <div>Time Gap: {point.dp.timeGap ?? "N/A"} s</div>
+                          </div>
+                        </Tooltip>
+                      </CircleMarker>
+                    ))}
+                  </>
                 )}
+
+                {/* {dpVehicleRoute.length > 1 && <MapBoundsFitter route={dpVehicleRoute} />} 
+                {dpVehicleRoute.length > 1 && (
+                  <Polyline positions={dpVehicleRoute} color="red" weight={3} />
+                )} */}
               </MapContainer>
             </div>
           </div>
