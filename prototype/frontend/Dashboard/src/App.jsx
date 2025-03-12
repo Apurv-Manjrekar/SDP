@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import StaticDashboard from "./pages/StaticDashboard";
 import DynamicSimulation from "./pages/DynamicSimulation";
 import LearnMore from "./pages/LearnMore";
+import AboutUs from './pages/AboutUs';
 
 const { Header, Sider, Content } = Layout;
 
@@ -24,6 +25,7 @@ const App = () => {
             <Route path="/static-dashboard" element={<StaticDashboard />} />
             <Route path="/dynamic-simulation" element={<DynamicSimulation />} />
             <Route path="/learn-more" element={<LearnMore />} />
+            <Route path="/about-us" element={<AboutUs />} />
           </Routes>
         </Content>
       </Layout>

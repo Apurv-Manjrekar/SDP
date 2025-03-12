@@ -45,12 +45,12 @@ const MenuList = () => {
           Why Differential Privacy?
         </Menu.Item>
         <Menu.Item key="what-is-differential-privacy">
-          What is Differential Privacy?
+        <Link to="/learn-more">What is Differential Privacy</Link>
         </Menu.Item>
       </Menu.SubMenu>
 
       <Menu.Item key="about-us" icon={<HomeOutlined />}>
-        About Us
+        <Link to="/about-us">About Us</Link>
       </Menu.Item>
 
     </Menu>
