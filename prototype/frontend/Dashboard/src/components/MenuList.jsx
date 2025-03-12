@@ -42,10 +42,10 @@ const MenuList = () => {
 
       <Menu.SubMenu key="differential-privacy" icon={<HomeOutlined />} title="Differential Privacy">
         <Menu.Item key="why-differential-privacy">
-          Why Differential Privacy?
+        <Link to="/why-differential-privacy">Why Differential Privacy?</Link>
         </Menu.Item>
         <Menu.Item key="what-is-differential-privacy">
-        <Link to="/learn-more">What is Differential Privacy</Link>
+        <Link to="/what-is-differential-privacy">What is Differential Privacy?</Link>
         </Menu.Item>
       </Menu.SubMenu>
 
