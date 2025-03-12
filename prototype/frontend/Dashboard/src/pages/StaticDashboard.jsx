@@ -26,7 +26,9 @@ const StaticDashboard = () => {
   // const [dpRiskScores, setDpRiskScores] = useState([]);
 
   const [selectedVehicle, setSelectedVehicle] = useState("all");
-  
+  const [selectedType, setSelectedType] = useState('all'); // 已定义
+  const [vehicleTypes, setVehicleTypes] = useState([]);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -64,6 +66,24 @@ const StaticDashboard = () => {
   
   const perPage = 50;
 
+  // useEffect(() => {
+  //   fetchVehicleTypes();
+  // }, []);
+  
+  const fetchVehicleTypes = async () => {
+    try {
+      const response = await fetch(`${API_URL}/vehicle-types`);
+      if (response.ok) {
+        const data = await response.json();
+        setVehicleTypes(data); 
+      } else {
+        console.error("Failed to fetch vehicle types");
+      }
+    } catch (error) {
+      console.error("Error fetching vehicle types:", error);
+    }
+  };
+
   // Fetch vehicle list only once on component mount
   useEffect(() => {
     fetchVehicleList();
@@ -73,9 +93,9 @@ const StaticDashboard = () => {
   const fetchData = useCallback(async () => {
     try {
       // Create cache keys
-      const vehicleDataKey = `${selectedVehicle}_${currentPage}`;
-      const dpVehicleDataKey = `${selectedVehicle}_${dpCurrentPage}`;
-      const riskScoreKey = `${selectedVehicle}_${riskCurrentPage}`;
+      const vehicleDataKey = `${selectedVehicle}_${selectedType}_${currentPage}`;
+      const dpVehicleDataKey =  `${selectedVehicle}_${selectedType}_${dpCurrentPage}`;
+      const riskScoreKey = `${selectedVehicle}_${selectedType}_${riskCurrentPage}`;
       const vehicleRouteKey = `${selectedVehicle}`
       const dpVehicleRouteKey = `${selectedVehicle}`
       
@@ -119,12 +139,12 @@ const StaticDashboard = () => {
     } catch (error) {
       setError(`Failed to fetch data: ${error.message}`);
     }
-  }, [selectedVehicle, currentPage, dpCurrentPage, riskCurrentPage, dataCache]);
+  }, [selectedVehicle, selectedType, currentPage, dpCurrentPage, riskCurrentPage, dataCache]);
 
   // Trigger data fetching when vehicle or page changes
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [selectedVehicle, selectedType, currentPage, dpCurrentPage, riskCurrentPage]);
 
   // Get list of all unique vehicle IDs for dropdown
   const fetchVehicleList = async () => {
@@ -140,12 +160,12 @@ const StaticDashboard = () => {
     }
   };
 
-  const fetchVehicleData = async () => {
+  const fetchVehicleData = async (selectedType) => {
     setIsLoading(true);
     try {
       const endpoint = selectedVehicle === "all" 
-        ? `${API_URL}/vehicle-data?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
-        : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`;
+      ? `${API_URL}/vehicle-data?dynamic=false&data_file=vehicle_data.csv&type=${selectedType}&page=${currentPage}&per_page=${perPage}`
+      : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv&type=${selectedType}&page=${currentPage}&per_page=${perPage}`;
       
       const response = await fetch(endpoint);
       if (!response.ok) {
@@ -155,12 +175,13 @@ const StaticDashboard = () => {
       const result = await response.json();
       
       if (result.data && Array.isArray(result.data)) {
+
         // Update state
         setVehicles(result.data);
         setTotalPages(result.pagination.total_pages);
         
         // Update cache
-        const cacheKey = `${selectedVehicle}_${currentPage}`;
+        const cacheKey = `${selectedVehicle}_${selectedType}_${currentPage}`;
         setDataCache(prevCache => ({
           ...prevCache,
           vehicleData: {
@@ -183,12 +204,12 @@ const StaticDashboard = () => {
     }
   };
 
-  const fetchDpVehicleData = async () => {
+  const fetchDpVehicleData = async (selectedType) => {
     setIsDpLoading(true);
     try {
       const endpoint = selectedVehicle === "all" 
-      ? `${API_URL}/vehicle-data?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
-      : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`;
+      ? `${API_URL}/vehicle-data?dynamic=false&data_file=dp_vehicle_data.csv&type=${selectedType}&page=${dpCurrentPage}&per_page=${perPage}`
+      : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv&type=${selectedType}&page=${dpCurrentPage}&per_page=${perPage}`;
       
       const response = await fetch(endpoint);
       if (!response.ok) {
@@ -203,7 +224,7 @@ const StaticDashboard = () => {
         setDpTotalPages(result.pagination.total_pages);
         
         // Update cache
-        const cacheKey = `${selectedVehicle}_${dpCurrentPage}`;
+        const cacheKey = `${selectedVehicle}_${selectedType}_${dpCurrentPage}`;
         setDataCache(prevCache => ({
           ...prevCache,
           dpVehicleData: {
@@ -332,13 +353,13 @@ const StaticDashboard = () => {
     }
   };
 
-  const fetchRiskScores = async () => {
+  const fetchRiskScores = async (selectedType) => {
     setIsRiskLoading(true);
     try {
       // Use the new combined endpoint with data_file parameter
       const endpoint = selectedVehicle === "all"
-        ? `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv`
-        : `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv&vehicle_id=${selectedVehicle}`;
+      ? `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv&type=${selectedType}`
+      : `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv&vehicle_id=${selectedVehicle}&type=${selectedType}`;
       
       const response = await fetch(endpoint);
       if (!response.ok) {
@@ -374,7 +395,7 @@ const StaticDashboard = () => {
       setRiskTotalPages(totalRiskPages || 1);
       
       // Update cache
-      const cacheKey = `${selectedVehicle}_${riskCurrentPage}`;
+      const cacheKey = `${selectedVehicle}_${selectedType}_${riskCurrentPage}`;
       setDataCache(prevCache => ({
         ...prevCache,
         riskScores: {
@@ -395,6 +416,14 @@ const StaticDashboard = () => {
     } finally {
       setIsRiskLoading(false);
     }
+  };
+
+  const handleTypeChange = (e) => {
+    const newValue = e.target.value;
+    setSelectedType(newValue);
+    setCurrentPage(1); // Reset to page 1 when changing types
+    setDpCurrentPage(1);
+    setRiskCurrentPage(1);
   };
 
   const handleVehicleChange = (e) => {
@@ -509,6 +538,25 @@ const StaticDashboard = () => {
         <strong className="font-bold">Error: </strong>
         <span className="block sm:inline">{error}</span>
       </div>}
+
+      {/* Vehicle Selection */}
+      <div className="mb-6">
+      <label htmlFor="type-select" className="block text-sm font-medium text-gray-700 mb-2">
+        Select Vehicle Type
+      </label>
+      <select
+        id="type-select"
+        className="block w-full p-2 border border-gray-300 rounded"
+        value={selectedType}
+        onChange={handleTypeChange}
+        disabled={isLoading || isDpLoading || isRiskLoading}
+      >
+        <option value="all">All Types</option>
+        <option value="motorcycle">Motorcycle</option>
+        <option value="car">Car</option>
+        <option value="truck">Truck</option>
+      </select>
+    </div>
 
       {/* Vehicle Selection */}
       <div className="mb-6">
@@ -653,16 +701,19 @@ const StaticDashboard = () => {
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="px-4 py-2 border-b border-gray-300 text-center">Vehicle</th>
+                    <th className="px-4 py-2 border-b border-gray-300 text-center">Type</th>
                     <th className="px-4 py-2 border-b border-gray-300 text-center">Risk Score</th>
                     <th className="px-4 py-2 border-b border-gray-300 text-center">DP Risk Score</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {riskScores.map((item, index) => {
+                  {riskScores
+                    .map((item, index) => {
                     const vehicleId = item.Vehicle_ID;
                     return (
                       <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
                         <td className="px-4 py-2 border-b border-gray-300 text-center">{vehicleId}</td>
+                        <td className="px-4 py-2 border-b border-gray-300 text-center">{item.type}</td>
                         <td className="px-4 py-2 border-b border-gray-300 text-center">{item.Risk_Score}</td>
                         <td className="px-4 py-2 border-b border-gray-300 text-center">
                           {getMatchingDpRiskScore(vehicleId)}
@@ -720,6 +771,7 @@ const StaticDashboard = () => {
                   <tr>
                     <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Time</th>
                     <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Vehicle ID</th>
+                    <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Type</th>
                     <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Speed</th>
                     <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Acceleration</th>
                     <th className="sticky top-0 px-4 py-2 border-b border-gray-300 text-left">Latitude</th>
@@ -736,10 +788,12 @@ const StaticDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {vehicles.map((vehicle, idx) => (
+                  {vehicles
+                  .map((vehicle, idx) => (
                     <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
                       <td className="px-4 py-2 border-b border-gray-300">{vehicle.Time}</td>
                       <td className="px-4 py-2 border-b border-gray-300">{vehicle.Vehicle_ID}</td>
+                      <td className="px-4 py-2 border-b border-gray-300">{vehicle.type}</td>
                       <td className="px-4 py-2 border-b border-gray-300">{vehicle.Speed}</td>
                       <td className="px-4 py-2 border-b border-gray-300">{vehicle.Acceleration}</td>
                       <td className="px-4 py-2 border-b border-gray-300">{vehicle.Latitude}</td>

@@ -37,6 +37,32 @@ DP_SCRIPT_PATH = os.path.join(DP_DIR_PATH, DP_SCRIPT)
 PROCESS_SCRIPT_PATH = os.path.join(PROCESS_DIR_PATH, PROCESS_SCRIPT)
 RISK_SCORE_SCRIPT_PATH = os.path.join(RISK_SCORE_DIR_PATH, RISK_SCORE_SCRIPT)
 
+def get_vehicle_type(vehicle_id):
+    if vehicle_id.startswith('motorcycle'):
+        return 'motorcycle'
+    elif vehicle_id.startswith('veh'):
+        return 'car'
+    elif vehicle_id.startswith('truck'):
+        return 'truck'
+    else:
+        return 'unknown'
+    
+@app.route('/vehicle-types', methods=['GET'])
+def get_vehicle_types():
+    try:
+        data_file_path = os.path.join(RESULTS_DIR_PATH, "vehicle_data.csv")
+        if not os.path.exists(data_file_path):
+            return jsonify({"error": "No data available. Run the simulation first."}), 404
+
+        df = pd.read_csv(data_file_path, usecols=['Vehicle_ID'])
+        
+        df['type'] = df['Vehicle_ID'].apply(get_vehicle_type)
+        unique_types = df['type'].unique().tolist()
+        
+        return jsonify(unique_types)
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch vehicle types: {str(e)}"}), 500
+    
 @app.route('/run-simulation', methods=['POST'])
 def run_simulation():
     """
@@ -123,6 +149,7 @@ def get_vehicle_data():
     """
     dynamic = request.args.get('dynamic', 'false') == 'true'
     data_file = request.args.get('data_file')
+    selected_type = request.args.get('type', 'all')
 
     if dynamic:    
         data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
@@ -144,6 +171,12 @@ def get_vehicle_data():
                          skiprows=range(1, offset + 1) if offset > 0 else None,
                          nrows=per_page)
         
+        if 'Vehicle_ID' in df.columns:
+            df['type'] = df['Vehicle_ID'].apply(get_vehicle_type)
+
+        if selected_type != 'all':
+            df = df[df['type'] == selected_type]
+            
         df = df.replace([float('inf'), float('-inf')], "None")
         df = df.where(pd.notna(df), "None")
 
@@ -431,12 +464,14 @@ def get_risk_score():
         original_df = pd.read_csv(original_risk_path)
         if vehicle_id:
             original_df = original_df[original_df['Vehicle_ID'].astype(str) == str(vehicle_id)]
+            original_df['type'] = original_df['Vehicle_ID'].apply(get_vehicle_type)
         result["original"] = original_df.to_dict(orient='records')
     
     if os.path.exists(dp_risk_path):
         dp_df = pd.read_csv(dp_risk_path)
         if vehicle_id:
             dp_df = dp_df[dp_df['Vehicle_ID'].astype(str) == str(vehicle_id)]
+            dp_df['type'] = dp_df['Vehicle_ID'].apply(get_vehicle_type)
         result["dp"] = dp_df.to_dict(orient='records')
     
     if result["original"] is None and result["dp"] is None:
