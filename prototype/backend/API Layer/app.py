@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import pandas as pd
 import os 
@@ -17,6 +17,7 @@ DYNAMIC_RESULTS_DIR_PATH = os.path.join(RESULTS_DIR_PATH, "dynamic")
 DP_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Differential Privacy Implementation")
 PROCESS_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Data Processing")
 RISK_SCORE_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Risk-Assessment")
+EPSILON_DATA_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Epsilon changes")
 
 DATA_FILE = "vehicle_data.csv"
 DP_DATA_FILE = "dp_vehicle_data.csv"
@@ -442,6 +443,23 @@ def get_risk_score():
         return jsonify({"error": "No risk scores available. Calculate risk scores first."}), 404
     
     return jsonify(result)
+
+@app.route('/data/<filename>', methods=['GET'])
+def get_csv_data(filename):
+    """
+    Serves the CSV file contents as JSON for the frontend.
+    """
+    file_path = os.path.join(EPSILON_DATA_DIR_PATH, filename)
+    
+    if not os.path.exists(file_path):
+        return jsonify({"error": "File not found"}), 404
+
+    try:
+        # Read CSV and return as JSON
+        df = pd.read_csv(file_path)
+        return jsonify(df.to_dict(orient="records"))
+    except Exception as e:
+        return jsonify({"error": f"Failed to read file: {str(e)}"}), 500
   
 
 if __name__ == '__main__':

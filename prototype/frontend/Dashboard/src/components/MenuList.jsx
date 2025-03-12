@@ -49,6 +49,10 @@ const MenuList = () => {
         </Menu.Item>
       </Menu.SubMenu>
 
+      <Menu.Item key="different-epsilon" icon={<HomeOutlined />}>
+        <Link to="/different-epsilon">Different Epsilon Data</Link>
+      </Menu.Item>
+
       <Menu.Item key="about-us" icon={<HomeOutlined />}>
         <Link to="/about-us">About Us</Link>
       </Menu.Item>

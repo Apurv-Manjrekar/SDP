@@ -9,6 +9,7 @@ import LearnMore from "./pages/LearnMore";
 import AboutUs from './pages/AboutUs';
 import WhatIsDifferentialPrivacy from "./pages/WhatIsDifferentialPrivacy";
 import WhyDifferentialPrivacy from "./pages/WhyDifferentialPrivacy";
+import DifferentEpsilon from "./pages/DifferentEpsilon";
 
 const { Header, Sider, Content } = Layout;
 
@@ -30,6 +31,7 @@ const App = () => {
             <Route path="/about-us" element={<AboutUs />} />
             <Route path="/what-is-differential-privacy" element={<WhatIsDifferentialPrivacy />} />
             <Route path="/why-differential-privacy" element={<WhyDifferentialPrivacy />} />
+            <Route path="/different-epsilon" element={<DifferentEpsilon />} />
           </Routes>
         </Content>
       </Layout>

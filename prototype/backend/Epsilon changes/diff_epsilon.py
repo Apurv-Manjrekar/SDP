@@ -1,0 +1,82 @@
+import pandas as pd
+import os
+from pydp.algorithms.numerical_mechanisms import LaplaceMechanism
+import argparse
+
+def calculate_continous_sensitivity(df, column):
+    return df[column].max() - df[column].min()
+
+def calculate_percentile_sensitivity(df, column):
+    return df[column].quantile(0.75) - df[column].quantile(0.25)
+
+def calculate_location_sensitivity(df, column):
+    return df[column].dropna().diff().abs().max()
+
+def add_laplace_noise(value, sensitivity, epsilon):
+    laplace_mech = LaplaceMechanism(epsilon, sensitivity)
+    return laplace_mech.add_noise(value)
+
+def apply_differential_privacy(df, numeric_columns=["Speed", "Acceleration", "Latitude", "Longitude", "Time_Gap"], epsilon=5):
+    df_copy = df.copy()  # Avoid modifying original data
+
+    sensitivities = {}
+    for column in numeric_columns:
+        if column in df_copy.columns:
+            if column == "Speed" or column == "Acceleration":
+                sensitivities[column] = calculate_continous_sensitivity(df_copy, column)
+            elif column == "Latitude" or column == "Latitude":
+                sensitivities[column] = calculate_location_sensitivity(df_copy, column)
+            else:
+                sensitivities[column] = calculate_percentile_sensitivity(df_copy, column)
+            print(f"Sensitivity for {column}: {sensitivities[column]}")
+
+    epsilon_weights = {
+        "Speed": 0.3,
+        "Acceleration": 0.4,
+        "Time_Gap": 0.2,
+        "Latitude": 0.05,
+        "Longitude": 0.05,
+    }
+
+    for column in numeric_columns:
+        if column in df_copy.columns:
+            column_sensitivity = sensitivities[column]
+            column_epsilon = epsilon * epsilon_weights[column]
+
+            noise = column_sensitivity / column_epsilon
+
+            print(f"Epsilon for {column}: {column_epsilon}")
+            print(f"Noise for {column}: {noise}")
+            
+            df_copy[column] = df_copy[column].apply(
+                lambda x: add_laplace_noise(x, column_sensitivity, column_epsilon) if pd.notnull(x) else x
+            )
+    
+    return df_copy
+
+def apply_multiple_epsilons(dataset, epsilon_values):
+    for epsilon in epsilon_values:
+        # Apply DP for each epsilon
+        df_dp = apply_differential_privacy(dataset, epsilon=epsilon)
+
+        # Save the output for each epsilon value
+        output_file_path = f"dp_vehicle_data_epsilon_{epsilon}.csv"
+        df_dp.to_csv(output_file_path, index=False)
+        print(f"Differentially private dataset with epsilon {epsilon} saved as {output_file_path}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Apply Differential Privacy to vehicle data.")
+    parser.add_argument("--dataset", type=str, required=True, help="Full path to dataset file (e.g., /path/to/vehicle_data.csv)")
+    parser.add_argument("--epsilon_values", type=str, default="0.01,0.1,0.5,1.0,2.0,5.0", help="Comma-separated list of epsilon values to use (e.g., 0.01,0.1,1.0,5.0)")
+
+    args = parser.parse_args()
+
+    # Parse epsilon values from the command line argument
+    epsilon_values = [float(e) for e in args.epsilon_values.split(",")]
+
+    # Load dataset
+    dataset_path = os.path.abspath(args.dataset)
+    df = pd.read_csv(dataset_path)
+
+    # Apply Differential Privacy for each epsilon value
+    apply_multiple_epsilons(df, epsilon_values)
