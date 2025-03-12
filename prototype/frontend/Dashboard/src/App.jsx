@@ -7,6 +7,8 @@ import StaticDashboard from "./pages/StaticDashboard";
 import DynamicSimulation from "./pages/DynamicSimulation";
 import LearnMore from "./pages/LearnMore";
 import AboutUs from './pages/AboutUs';
+import WhatIsDifferentialPrivacy from "./pages/WhatIsDifferentialPrivacy";
+import WhyDifferentialPrivacy from "./pages/WhyDifferentialPrivacy";
 
 const { Header, Sider, Content } = Layout;
 
@@ -26,6 +28,8 @@ const App = () => {
             <Route path="/dynamic-simulation" element={<DynamicSimulation />} />
             <Route path="/learn-more" element={<LearnMore />} />
             <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/what-is-differential-privacy" element={<WhatIsDifferentialPrivacy />} />
+            <Route path="/why-differential-privacy" element={<WhyDifferentialPrivacy />} />
           </Routes>
         </Content>
       </Layout>
