@@ -22,7 +22,22 @@ export default function DataViewer() {
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">How Different Epsilon Values Affect Risk Scores</h1>
+      <h1 className="text-xl font-bold mb-4">The Impact of Epsilon on Risk Scores</h1>
+
+    {/* Image Section */}
+    <div className="mb-8">  {/* Increased margin-bottom for more space */}
+        <img
+          src="http://localhost:8000/images/risk_vs_epsilon.png"
+          alt="Risk vs Epsilon Graph"
+          style={{ width: '80%' }}
+          className="mx-auto border rounded-lg shadow-md"
+        />
+      </div>
+
+      {/* Subheader for Dropdown */}
+      <h2 className="text-lg font-semibold mb-2">
+        Select an epsilon value to see the risk scores change
+      </h2>
 
       {/* Native Select Dropdown */}
       <label htmlFor="epsilon-select" className="block mb-2">Select Epsilon Value:</label>

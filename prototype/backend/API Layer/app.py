@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, send_file
 from flask_cors import CORS
 import pandas as pd
 import os 
@@ -18,6 +18,7 @@ DP_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Differential Privacy Implementa
 PROCESS_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Data Processing")
 RISK_SCORE_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Risk-Assessment")
 EPSILON_DATA_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Epsilon changes")
+IMAGE_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "Epsilon changes")
 
 DATA_FILE = "vehicle_data.csv"
 DP_DATA_FILE = "dp_vehicle_data.csv"
@@ -460,7 +461,13 @@ def get_csv_data(filename):
         return jsonify(df.to_dict(orient="records"))
     except Exception as e:
         return jsonify({"error": f"Failed to read file: {str(e)}"}), 500
-  
+
+@app.route("/images/risk_vs_epsilon.png")
+def get_image():
+    """
+    Serves the risk_vs_epsilon.png file from the 'Epsilon changes' directory.
+    """
+    return send_from_directory(IMAGE_DIR_PATH, "risk_vs_epsilon.png")
 
 if __name__ == '__main__':
     app.run(debug=True, host='localhost', port=8000)
