@@ -78,11 +78,16 @@ def apply_differential_privacy(df, numeric_columns=["Speed", "Acceleration", "La
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Apply Differential Privacy to vehicle data.")
     parser.add_argument("--dataset", type=str, required=True, help="Full path to dataset file (e.g., /path/to/vehicle_data.csv)")
-    parser.add_argument("--epsilon", type=float, default=5.0, help="Epsilon parameter to use while applying differential privacy.")
+    parser.add_argument("--epsilon", type=float, default=0, help="Epsilon parameter to use while applying differential privacy.")
 
     args = parser.parse_args()
 
-    epsilon = args.epsilon
+    epsilon_input = args.epsilon
+
+    if epsilon_input == 0:
+        epsilon = 5
+    else:
+        epsilon = epsilon_input
 
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
     results_dir_path = os.path.join(curr_dir_path, "..", "SUMO", "results")
@@ -111,7 +116,10 @@ if __name__ == "__main__":
     # df_dp = df_dp[selected_columns]
 
     # Save and display results
-    output_file_path = os.path.join(input_dir, "dp_" + os.path.basename(dataset_path))
+    if epsilon_input == 0:
+        output_file_path = os.path.join(input_dir, "dp_" + os.path.basename(dataset_path))
+    else:
+        output_file_path = os.path.join(input_dir, "dp_" + os.path.basename(dataset_path).replace(".csv", f"_epsilon_{epsilon}.csv"))
     df_dp.to_csv(output_file_path, index=False)
     print(f"Differentially private dataset saved as {output_file_path}")
     print(df_dp.head())

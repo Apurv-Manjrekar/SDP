@@ -11,6 +11,7 @@ from sumolib import net
 import time
 import glob
 import pyproj
+import datetime
 
 ### ------------------------------ FILE MANAGEMENT ------------------------------ ###
 def decompress_gz(input_gz_file):
@@ -76,19 +77,19 @@ def latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, proj_string):
     return x_sumo, y_sumo
 
 
-def get_nearest_edge(lat, lon, net_file):
+def get_nearest_edge(lat, lon, net_file, net_offset_x, net_offset_y, proj_string):
     """
     Finds the nearest edge to a given latitude and longitude.
     """
     net_data = net.readNet(net_file)
 
-    net_offset_x, net_offset_y, proj_string = extract_network_info(net_file)
+    # net_offset_x, net_offset_y, proj_string = extract_network_info(net_file)
 
     x, y = latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, proj_string)
 
     print(f"Converted ({lat}, {lon}) -> SUMO ({x}, {y})")
 
-    edges = net_data.getNeighboringEdges(x, y, 200)
+    edges = net_data.getNeighboringEdges(x, y, 1609)
     if not edges:
         print("No edges found nearby.")
         return None
@@ -177,8 +178,8 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
 
     if dynamic:
         print(f"Adding dynamic vehicle from {start_point} to {end_point}")
-        nearest_start_edge = get_nearest_edge(start_point[0], start_point[1], net_path)
-        nearest_end_edge = get_nearest_edge(end_point[0], end_point[1], net_path)
+        nearest_start_edge = get_nearest_edge(start_point[0], start_point[1], net_path, net_offset_x, net_offset_y, proj_string)
+        nearest_end_edge = get_nearest_edge(end_point[0], end_point[1], net_path, net_offset_x, net_offset_y, proj_string)
         dynamic_vehicle_id = add_vehicle(nearest_start_edge, nearest_end_edge, vehicle_type, vehicle_behavior)
         vehicles = [dynamic_vehicle_id]
         print(f"Dynamic vehicle ID: {dynamic_vehicle_id}")
@@ -405,7 +406,9 @@ if __name__ == "__main__":
 
     vehicles = None
     if dynamic:
-        output_path = os.path.join(results_dir_path, "dynamic", "vehicle_data_" +  vehicle_type + "_" + vehicle_behavior + "_" + str(start_point) + "_" + str(end_point) + ".csv")
+        if vehicle_behavior == "":
+            behavior_name = "normal"
+        output_path = os.path.join(results_dir_path, "dynamic", "vehicle_data_" +  vehicle_type + "_" + behavior_name + "_" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".csv")
     elif vehicles == None:
         output_path = os.path.join(results_dir_path, "vehicle_data.csv")
     else:

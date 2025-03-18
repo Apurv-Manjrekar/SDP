@@ -113,7 +113,7 @@ const StaticDashboard = () => {
       if (!dataCache.dpVehicleRoute[dpVehicleRouteKey]) {
         await fetchDpVehicleRoute();
       } else {
-        setVehicleRoute(dataCache.dpVehicleRoute[dpVehicleRouteKey].route)
+        setDpVehicleRoute(dataCache.dpVehicleRoute[dpVehicleRouteKey].route)
       }
       
     } catch (error) {
@@ -348,8 +348,8 @@ const StaticDashboard = () => {
       const result = await response.json();
       
       // Extract original and DP risk scores
-      const originalData = result.original || [];
-      const dpData = result.dp || [];
+      const originalData = result.data.original || [];
+      const dpData = result.data.dp || [];
       
       // Filter by vehicle ID if needed
       const filteredOriginalData = selectedVehicle === "all" 
@@ -442,8 +442,6 @@ const StaticDashboard = () => {
         timeGap: point.timeGap,
       },
       dp: {
-        lat: dpPoint.lat,
-        lng: dpPoint.lng,
         speed: dpPoint.speed,
         acceleration: dpPoint.acceleration,
         timeGap: dpPoint.timeGap,
