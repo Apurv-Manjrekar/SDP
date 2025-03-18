@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-03-03 14:39:39 by Eclipse SUMO sumo Version 1.21.0
+<!-- generated on 2025-03-12 09:43:09 by Eclipse SUMO sumo Version 1.21.0
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
@@ -15,6 +15,7 @@
     </output>
 
     <processing>
+        <threads value="16"/>
         <ignore-route-errors value="true"/>
         <tls.actuated.jam-threshold value="30"/>
     </processing>
@@ -26,13 +27,12 @@
 
     <report>
         <verbose value="true"/>
-        <log value="LOGFILE"/>
         <duration-log.statistics value="true"/>
         <no-step-log value="true"/>
     </report>
 
     <traci_server>
-        <remote-port value="47917"/>
+        <remote-port value="33125"/>
     </traci_server>
 
     <gui_only>

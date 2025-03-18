@@ -5,6 +5,7 @@ import os
 import subprocess
 import json
 from ast import literal_eval
+import re
 
 
 app = Flask(__name__)
@@ -125,8 +126,27 @@ def get_vehicle_data():
     dynamic = request.args.get('dynamic', 'false') == 'true'
     data_file = request.args.get('data_file')
 
-    if dynamic:    
-        data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
+    epsilon = None
+
+    if dynamic:
+        if data_file.startswith("dp_"):
+            all_files = os.listdir(DYNAMIC_RESULTS_DIR_PATH)
+            matching_files = [
+                f for f in all_files
+                if f.startswith(data_file.replace('.csv', '_epsilon_')) and f.endswith('.csv') and not f.endswith("_risk_scores.csv") and re.search(r'_epsilon_([\d\.]+)', f)
+            ]
+            file = data_file
+            if matching_files:
+                file = matching_files[0]
+                match = re.search(r'_epsilon_([\d\.]+)', file)
+                if match:
+                    epsilon = float(match.group(1)[:-1])  # Extract the epsilon value (digit)
+                    print(f"Found file: {file}, epsilon set to: {epsilon}")
+                else:
+                    print("No valid epsilon value found in the filename.")
+            data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, file)
+        else:
+            data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
     else:
         data_file_path = os.path.join(RESULTS_DIR_PATH, data_file)
     if not os.path.exists(data_file_path):
@@ -153,15 +173,27 @@ def get_vehicle_data():
             if col in df.columns:
                 df[col] = df[col].map({1: True, 0: False, 'True': True, 'False': False})
         
-        return jsonify({
-            "data": df.to_dict(orient='records'),
-            "pagination": {
-                "page": page,
-                "per_page": per_page,
-                "total": total_rows,
-                "total_pages": (total_rows + per_page - 1) // per_page
-            }
-        })
+        if epsilon:
+            return jsonify({
+                "data": df.to_dict(orient='records'),
+                "pagination": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total_rows,
+                    "total_pages": (total_rows + per_page - 1) // per_page
+                },
+                "epsilon": epsilon
+            })
+        else:
+            return jsonify({
+                "data": df.to_dict(orient='records'),
+                "pagination": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total": total_rows,
+                    "total_pages": (total_rows + per_page - 1) // per_page
+                }
+            })
     except Exception as e:
         return jsonify({"error": f"Failed to fetch data: {str(e)}"}), 500
 
@@ -273,8 +305,20 @@ def get_vehicle_route():
     dynamic = request.args.get('dynamic', 'false') == 'true'
     data_file = request.args.get('data_file')
 
-    if dynamic:    
-        data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
+    if dynamic:
+        if data_file.startswith("dp_"):
+            all_files = os.listdir(DYNAMIC_RESULTS_DIR_PATH)
+            matching_files = [
+                f for f in all_files
+                if f.startswith(data_file.replace('.csv', '')) and f.endswith('.csv') and re.search(r'_epsilon_([\d\.]+)', f)
+            ]
+            file = data_file
+            if matching_files:
+                file = matching_files[0]
+
+            data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, file)
+        else:
+            data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
     else:
         data_file_path = os.path.join(RESULTS_DIR_PATH, data_file)
     if not os.path.exists(data_file_path):
@@ -351,30 +395,30 @@ def apply_dp():
         return jsonify({"error": f"Failed to apply differential privacy: {str(e)}"}), 500
 
 
-@app.route('/preprocess-data', methods=['POST'])
-def preprocess_data():
-    """
-    Preprocesses the vehicle data.
-    """
-    # Get which dataset from request
-    data = request.get_json()
-    dynamic = data.get('dynamic')
-    data_file = data.get('data_file')
+# @app.route('/preprocess-data', methods=['POST'])
+# def preprocess_data():
+#     """
+#     Preprocesses the vehicle data.
+#     """
+#     # Get which dataset from request
+#     data = request.get_json()
+#     dynamic = data.get('dynamic')
+#     data_file = data.get('data_file')
 
-    if dynamic == True:
-        data_file_path = os.path.join("dynamic", data_file, '.csv')
-    else:
-        data_file_path = os.path.join(data_file, '.csv')
+#     if dynamic == True:
+#         data_file_path = os.path.join("dynamic", data_file, '.csv')
+#     else:
+#         data_file_path = os.path.join(data_file, '.csv')
     
-    if not os.path.exists(data_file_path):
-        return jsonify({"error": "No data available. Run the simulation first."}), 404
+#     if not os.path.exists(data_file_path):
+#         return jsonify({"error": "No data available. Run the simulation first."}), 404
 
-    # Run the data preprocessing script
-    try:
-        subprocess.run(["python", PROCESS_SCRIPT_PATH, data_file_path], check=True)
-        return jsonify({"message": "Data preprocessed successfully."}), 200
-    except Exception as e:
-        return jsonify({"error": f"Failed to preprocess data: {str(e)}"}), 500
+#     # Run the data preprocessing script
+#     try:
+#         subprocess.run(["python", PROCESS_SCRIPT_PATH, data_file_path], check=True)
+#         return jsonify({"message": "Data preprocessed successfully."}), 200
+#     except Exception as e:
+#         return jsonify({"error": f"Failed to preprocess data: {str(e)}"}), 500
 
 @app.route('/calculate-risk-score', methods=['POST'])
 def calculate_risk_score():
@@ -388,7 +432,15 @@ def calculate_risk_score():
 
     if dynamic == True:
         data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
-        dp_data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, f"dp_{data_file}")
+        all_files = os.listdir(DYNAMIC_RESULTS_DIR_PATH)
+        matching_files = [
+            f for f in all_files
+            if f.startswith(f"dp_{data_file}".replace('.csv', '')) and f.endswith('.csv') and re.search(r'_epsilon_([\d\.]+)', f)
+        ]
+        file = data_file
+        if matching_files:
+            file = matching_files[0]
+        dp_data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, file)
     else:
         data_file_path = os.path.join(RESULTS_DIR_PATH, data_file)
         dp_data_file_path = os.path.join(RESULTS_DIR_PATH, f"dp_{data_file}")
@@ -416,9 +468,25 @@ def get_risk_score():
     data_file = request.args.get('data_file')
     vehicle_id = request.args.get('vehicle_id')
 
+    epsilon = None
+
     if dynamic == True:
         original_risk_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file.replace('.csv', '_risk_scores.csv'))
-        dp_risk_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, f"dp_{data_file}".replace('.csv', '_risk_scores.csv'))
+        all_files = os.listdir(DYNAMIC_RESULTS_DIR_PATH)
+        matching_files = [
+            f for f in all_files
+            if f.startswith(f"dp_{data_file}".replace('.csv', '')) and f.endswith('_risk_scores.csv') and re.search(r'_epsilon_([\d\.]+)', f)
+        ]
+        file = f"dp_{data_file}"
+        if matching_files:
+            file = matching_files[0]
+            match = re.search(r'_epsilon_([\d\.]+)', file)
+            if match:
+                epsilon = float(match.group(1)[:-1])   # Extract the epsilon value (digit)
+                print(f"Found file: {file}, epsilon set to: {epsilon}")
+            else:
+                print("No valid epsilon value found in the filename.")
+        dp_risk_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, file)
     else:
         original_risk_path = os.path.join(RESULTS_DIR_PATH, data_file.replace('.csv', '_risk_scores.csv'))
         dp_risk_path = os.path.join(RESULTS_DIR_PATH, f"dp_{data_file}".replace('.csv', '_risk_scores.csv'))
@@ -443,7 +511,10 @@ def get_risk_score():
     if result["original"] is None and result["dp"] is None:
         return jsonify({"error": "No risk scores available. Calculate risk scores first."}), 404
     
-    return jsonify(result)
+    if epsilon:
+        return jsonify({"data": result, "epsilon": epsilon}), 200
+    else:
+        return jsonify({"data": result}), 200
 
 @app.route('/data/<filename>', methods=['GET'])
 def get_csv_data(filename):

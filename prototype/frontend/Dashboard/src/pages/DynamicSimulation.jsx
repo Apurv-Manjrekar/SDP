@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import L from "leaflet";
 import "./DynamicSimulation.css";
 import 'leaflet/dist/leaflet.css';
+import SimulationFlow from './../components/SimulationFlow';
 
 const DynamicSimulation = () => {
   const [startPoint, setStartPoint] = useState("");
@@ -32,6 +33,9 @@ const DynamicSimulation = () => {
   const [dpTotalPages, setDpTotalPages] = useState(1);
 
   const [epsilon, setEpsilon] = useState(5)
+
+  const [usedDpEpsilon, setDpUsedEpsilon] = useState(5)
+  const [usedRiskEpsilon, setRiskUsedEpsilon] = useState(5)
 
   const sumoBounds = [
     [41.645520, -72.797705], // SW corner
@@ -245,6 +249,7 @@ const DynamicSimulation = () => {
         const data = await response.json();
         setDpVehicleData(data.data);
         setDpTotalPages(data.pagination.total_pages)
+        setDpUsedEpsilon(data.epsilon)
         setIsDpApplied(true)
       } else {
         setIsDpApplied(false);
@@ -341,7 +346,9 @@ const DynamicSimulation = () => {
       );
       if (response.ok) {
         const data = await response.json();
-        setRiskScores(data);
+        setRiskScores(data.data);
+        console.log("Risk scores received:", data.data);
+        setRiskUsedEpsilon(data.epsilon)
       } else {
         const errorData = await response.json();
         console.error("Failed to fetch risk scores:", errorData.error);
@@ -396,6 +403,13 @@ const DynamicSimulation = () => {
     } else if (type === 'dp' && newPage >= 1 && newPage <= dpTotalPages) {
       setDpCurrentPage(newPage);
     }
+  };
+
+  const formatValue = (value) => {
+    if (value === true) return "Yes";
+    if (value === false) return "No";
+    if (value === null || value === undefined) return "N/A";
+    return value;
   };
 
   const combinedRoute = vehicleRoute.map((point, index) => {
@@ -613,10 +627,10 @@ const DynamicSimulation = () => {
 
         {/* Vehicle Data Section */}
         <div className="vehicle-data-section">
-          <h2>Vehicle Data</h2>
+          {/* <h2>Vehicle Data</h2> */}
           <div className="vehicle-selector">
             <label>
-              Select Vehicle:
+              Select Vehicle: 
               <select
                 value={selectedVehicle}
                 onChange={(e) => setSelectedVehicle(e.target.value)}
@@ -679,19 +693,39 @@ const DynamicSimulation = () => {
                       <table>
                         <thead>
                           <tr>
-                            {Object.keys(vehicleData[0]).map((key) => (
-                              <th key={key}>{key}</th>
-                            ))}
+                            <th >Time</th>
+                            <th >Vehicle ID</th>
+                            <th >Speed</th>
+                            <th >Acceleration</th>
+                            <th >Latitude</th>
+                            <th >Longitude</th>
+                            <th >Lane</th>
+                            <th>Headway Distance</th>
+                            <th >Time Gap</th>
+                            <th >Speed Limit</th>
+                            <th>Lane Change</th>
+                            <th>Lane Change Reason</th>
+                            <th>Collision</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {vehicleData.map((row, index) => (
-                            <tr key={index}>
-                              {Object.values(row).map((value, i) => (
-                                <td key={i}>{value?.toString()}</td>
-                              ))}
-                            </tr>
-                          ))}
+                          {vehicleData.map((vehicle, idx) => (
+                          <tr key={idx}>
+                            <td >{vehicle.Time}</td>
+                            <td >{vehicle.Vehicle_ID}</td>
+                            <td >{vehicle.Speed}</td>
+                            <td >{vehicle.Acceleration}</td>
+                            <td>{vehicle.Latitude}</td>
+                            <td>{vehicle.Longitude}</td>
+                            <td >{vehicle.Lane}</td>
+                            <td >{vehicle.Headway_Distance}</td>
+                            <td >{vehicle.Time_Gap}</td>
+                            <td >{vehicle.Speed_Limit}</td>
+                            <td>{formatValue(vehicle.Lane_Change)}</td>
+                            <td>{formatValue(vehicle.Lane_Change_Reason)}</td>
+                            <td>{formatValue(vehicle.Collision)}</td>
+                          </tr>
+                        ))}
                         </tbody>
                       </table>
                     </div>
@@ -724,7 +758,7 @@ const DynamicSimulation = () => {
           {view === "dp-simulation-data" && (
             isDpApplied && (
               <div className="data-display">
-                <h3>Differential Privacy Vehicle Data</h3>
+                <h3>Differential Privacy Vehicle Data (Applied Epsilon: {usedDpEpsilon})</h3>
                 {isLoadingData ? (
                   <p>Loading data...</p>
                 ) : dpVehicleData.length > 0 ? (
@@ -733,19 +767,39 @@ const DynamicSimulation = () => {
                       <table>
                         <thead>
                           <tr>
-                            {Object.keys(dpVehicleData[0]).map((key) => (
-                              <th key={key}>{key}</th>
-                            ))}
+                            <th >Time</th>
+                            <th >Vehicle ID</th>
+                            <th >Speed</th>
+                            <th >Acceleration</th>
+                            <th >Latitude</th>
+                            <th >Longitude</th>
+                            <th >Lane</th>
+                            <th>Headway Distance</th>
+                            <th >Time Gap</th>
+                            <th >Speed Limit</th>
+                            <th>Lane Change</th>
+                            <th>Lane Change Reason</th>
+                            <th>Collision</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {dpVehicleData.map((row, index) => (
-                            <tr key={index}>
-                              {Object.values(row).map((value, i) => (
-                                <td key={i}>{value?.toString()}</td>
-                              ))}
-                            </tr>
-                          ))}
+                          {dpVehicleData.map((vehicle, idx) => (
+                          <tr key={idx}>
+                            <td >{vehicle.Time}</td>
+                            <td >{vehicle.Vehicle_ID}</td>
+                            <td >{vehicle.Speed}</td>
+                            <td >{vehicle.Acceleration}</td>
+                            <td>{vehicle.Latitude}</td>
+                            <td>{vehicle.Longitude}</td>
+                            <td >{vehicle.Lane}</td>
+                            <td >{vehicle.Headway_Distance}</td>
+                            <td >{vehicle.Time_Gap}</td>
+                            <td >{vehicle.Speed_Limit}</td>
+                            <td>{formatValue(vehicle.Lane_Change)}</td>
+                            <td>{formatValue(vehicle.Lane_Change_Reason)}</td>
+                            <td>{formatValue(vehicle.Collision)}</td>
+                          </tr>
+                        ))}
                         </tbody>
                       </table>
                     </div>
@@ -778,7 +832,7 @@ const DynamicSimulation = () => {
           {view === "simulation-risk-scores" && (
             (riskScores.original || riskScores.dp) && (
               <div className="risk-scores-display">
-                <h3>Risk Scores</h3>
+                <h3>Risk Scores (Applied Epsilon: {usedRiskEpsilon})</h3>
                 <div className="risk-scores-container">
                   {/* Check if both original and dp are available */}
                   {(riskScores.original && riskScores.dp) && (
@@ -815,10 +869,19 @@ const DynamicSimulation = () => {
           )}
         </div>
 
+        {/* Flow Chart */}
+        {view === "run-simulation" && (
+          <div className="flow-chart-container">
+            <div className="flow-chart">
+              <label>Simulation Flow</label>
+              <SimulationFlow />
+            </div>
+          </div>
+        )}
+
         {error && <div style={{ color: "red" }}>Error: {error}</div>}
         {successMessage && <div style={{ color: "green" }}>{successMessage}</div>}
       </div>
-    // </div>
   );
 };
 
