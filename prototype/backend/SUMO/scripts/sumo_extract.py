@@ -177,12 +177,12 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
         traci.simulation.loadState(state_file)
 
     if dynamic:
-        print(f"Adding dynamic vehicle from {start_point} to {end_point}")
+        print(f"LOG: Adding dynamic vehicle {vehicle_type} from {start_point} to {end_point} with behvaior {vehicle_behavior}.")
         nearest_start_edge = get_nearest_edge(start_point[0], start_point[1], net_path, net_offset_x, net_offset_y, proj_string)
         nearest_end_edge = get_nearest_edge(end_point[0], end_point[1], net_path, net_offset_x, net_offset_y, proj_string)
         dynamic_vehicle_id = add_vehicle(nearest_start_edge, nearest_end_edge, vehicle_type, vehicle_behavior)
         vehicles = [dynamic_vehicle_id]
-        print(f"Dynamic vehicle ID: {dynamic_vehicle_id}")
+        print(f"LOG: Dynamic vehicle ID: {dynamic_vehicle_id}")
 
     data_rows = []
     chunk_counter = 0
@@ -194,7 +194,8 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
     for step in range(simulation_time): # run for SIMULATION_TIME seconds
         traci.simulationStep()
         current_time = float(traci.simulation.getTime())
-        print(f"Time: {current_time}")
+        if step % save_interval == 0:
+            print(f"LOG: Simulated {current_time} seconds...")
         vehicle_ids = traci.vehicle.getIDList()
 
         if vehicles != None:
@@ -246,15 +247,15 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
                 if vehicle_id not in vehicle_ids:
                     vehicles_remaining.discard(vehicle_id)
                     vehicles_in_progress.discard(vehicle_id)
-                    print(f"Vehicle {vehicle_id} has left the network.")
+                    print(f"LOG: Vehicle {vehicle_id} has left the network.")
 
             for vehicle_id in vehicles_remaining.copy():
                 if vehicle_id not in vehicles_in_progress and vehicle_id in vehicle_ids:
                     vehicles_in_progress.add(vehicle_id)
-                    print(f"Vehicle {vehicle_id} has entered the network.")
+                    print(f"LOG: Vehicle {vehicle_id} has entered the network.")
             
             if len(vehicles_remaining) == 0:
-                print("All vehicles have left the network.")
+                print("LOG: All vehicles have left the network.")
                 break
 
     traci.close() # not needed for libsumo
@@ -265,7 +266,7 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
         df_chunk.to_csv(output_chunk_path, index=False, mode='w', header=chunk_counter == 0)
     else:
         pd.DataFrame(data_rows).to_csv(output_path, index=False)
-    
+
     return pd.DataFrame(data_rows)
 
 
@@ -311,7 +312,7 @@ def add_vehicle(start, end, vehicle_type, vehicle_behavior):
     
     vehicle_id = f"{vehicle_type}_{time.time()}"
     typeID = f"{vehicle_type}_{vehicle_behavior}" if vehicle_behavior != "" else vehicle_type
-    traci.vehicle.add(vehicle_id, route_id, typeID=typeID, departLane="best", departSpeed="max", departPos="free")
+    traci.vehicle.add(vehicle_id, route_id, typeID=typeID, departLane="best", departSpeed="avg", departPos="last")
     
     return vehicle_id
 
@@ -360,7 +361,7 @@ if __name__ == "__main__":
     if dynamic:
         start_point = ast.literal_eval(args.start_point)
         end_point = ast.literal_eval(args.end_point)
-        print(f"Parsed start_point: {start_point}, end_point: {end_point}")
+        # print(f"Parsed start_point: {start_point}, end_point: {end_point}")
 
         vehicle_type = args.vehicle_type
         vehicle_behavior = args.behavior
@@ -408,6 +409,8 @@ if __name__ == "__main__":
     if dynamic:
         if vehicle_behavior == "":
             behavior_name = "normal"
+        else:
+            behavior_name = vehicle_behavior
         output_path = os.path.join(results_dir_path, "dynamic", "vehicle_data_" +  vehicle_type + "_" + behavior_name + "_" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".csv")
     elif vehicles == None:
         output_path = os.path.join(results_dir_path, "vehicle_data.csv")
@@ -443,4 +446,4 @@ if __name__ == "__main__":
         vehicle_data.to_csv(output_path, index=False)
 
     print(f"Vehicle data saved to {output_path}!")
-    print(vehicle_data.head())
+    # print(vehicle_data.head())

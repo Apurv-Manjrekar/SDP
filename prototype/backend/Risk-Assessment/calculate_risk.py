@@ -40,8 +40,8 @@ def calculate_risk(df):
 
     # Output summary statistics
     # print(df[["Speeding_Risk", "Acceleration_Risk", "Braking_Risk", "Lane_Change_Risk", "Headway_Risk"]].describe())
-    print(df[["Risk_Score"]].describe())
-    print(road_risk_scores.head())
+    # print(df[["Risk_Score"]].describe())
+    # print(road_risk_scores.head())
 
     return road_risk_scores
 
@@ -69,5 +69,5 @@ if __name__ == "__main__":
     output_file_path = os.path.join(input_dir, os.path.basename(dataset_path)[:-4] + "_risk_scores.csv")
     road_risk_scores.to_csv(output_file_path, index=False)
 
-    print(f"Risk metrics saved to {output_file_path}!")
+    print(f"LOG: Risk metrics saved to {output_file_path}!")
 
