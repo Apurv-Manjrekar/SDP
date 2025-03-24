@@ -105,16 +105,16 @@ const StaticDashboard = () => {
         setRiskTotalPages(cachedData.totalPages);
       }
 
-      if (!dataCache.vehicleRoute[vehicleRouteKey]) {
-        await fetchVehicleRoute();
-      } else {
-        setVehicleRoute(dataCache.vehicleRoute[vehicleRouteKey].route)
-      }
-      if (!dataCache.dpVehicleRoute[dpVehicleRouteKey]) {
-        await fetchDpVehicleRoute();
-      } else {
-        setDpVehicleRoute(dataCache.dpVehicleRoute[dpVehicleRouteKey].route)
-      }
+      // if (!dataCache.vehicleRoute[vehicleRouteKey]) {
+      //   await fetchVehicleRoute();
+      // } else {
+      //   setVehicleRoute(dataCache.vehicleRoute[vehicleRouteKey].route)
+      // }
+      // if (!dataCache.dpVehicleRoute[dpVehicleRouteKey]) {
+      //   await fetchDpVehicleRoute();
+      // } else {
+      //   setDpVehicleRoute(dataCache.dpVehicleRoute[dpVehicleRouteKey].route)
+      // }
       
     } catch (error) {
       setError(`Failed to fetch data: ${error.message}`);
@@ -143,10 +143,21 @@ const StaticDashboard = () => {
   const fetchVehicleData = async () => {
     setIsLoading(true);
     try {
-      const endpoint = selectedVehicle === "all" 
+      const vehicleRouteKey = `${selectedVehicle}`;
+      const isAllVehicles = selectedVehicle === "all";
+
+      let endpoint;
+
+      if (!dataCache.vehicleRoute[vehicleRouteKey]) {
+        endpoint = isAllVehicles
+        ? `${API_URL}/vehicle-data?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
+        : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}&get_route=true`;
+      } else {
+        endpoint = isAllVehicles
         ? `${API_URL}/vehicle-data?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
         : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`;
-      
+      }
+  
       const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -175,8 +186,37 @@ const StaticDashboard = () => {
         setError(`No data found for ${selectedVehicle === "all" ? "any vehicles" : `Vehicle ${selectedVehicle}`}.`);
         setVehicles([]);
       }
+      if (!dataCache.vehicleRoute[vehicleRouteKey] && result.route && result.route.length > 0) {
+        const route = result.route
+          .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
+          .map(point => ({
+            lat: Number(point.Latitude),
+            lng: Number(point.Longitude),
+            speed: point.Speed ?? null,
+            acceleration: point.Acceleration ?? null,
+            timeGap: point["Time_Gap"] ?? null
+          }));
+        setVehicleRoute(route);
+        setDataCache(prevCache => ({
+            ...prevCache,
+            vehicleRoute: {
+              ...prevCache.vehicleRoute,
+              [vehicleRouteKey]: {
+                route: route
+              }
+            }
+          }))
+          if (route.length > 0) {
+            setStartPoint([route[0].lat, route[0].lng]);
+            setEndPoint([route[route.length - 1].lat, route[route.length - 1].lng]);
+          } else {
+            setVehicleRoute([]);
+            setStartPoint("");
+            setEndPoint("");
+          }
+      }
     } catch (error) {
-      setError(`Failed to fetch vehicle data: ${error.message}`);
+      console.error("Failed to fetch vehicle data:", error);
       setVehicles([]);
     } finally {
       setIsLoading(false);
@@ -186,10 +226,19 @@ const StaticDashboard = () => {
   const fetchDpVehicleData = async () => {
     setIsDpLoading(true);
     try {
-      const endpoint = selectedVehicle === "all" 
-      ? `${API_URL}/vehicle-data?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
-      : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`;
-      
+      const dpVehicleRouteKey = `${selectedVehicle}`
+      const isAllVehicles = selectedVehicle === "all"
+
+      let endpoint;
+      if (!dataCache.dpVehicleRoute[dpVehicleRouteKey]) {
+        endpoint = isAllVehicles
+        ? `${API_URL}/vehicle-data?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
+        : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}&get_route=true`;
+      } else {
+        endpoint = isAllVehicles
+        ? `${API_URL}/vehicle-data?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
+        : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`;
+      }
       const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -217,6 +266,29 @@ const StaticDashboard = () => {
       } else {
         setDpVehicles([]);
       }
+      if (!dataCache.dpVehicleRoute[dpVehicleRouteKey] && result.route && result.route.length > 0) {
+        const route = result.route
+          .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
+          .map(point => ({
+            lat: Number(point.Latitude),
+            lng: Number(point.Longitude),
+            speed: point.Speed ?? null,
+            acceleration: point.Acceleration ?? null,
+            timeGap: point["Time_Gap"] ?? null
+          }));
+        setDpVehicleRoute(route);
+        setDataCache(prevCache => ({
+            ...prevCache,
+            dpVehicleRoute: {
+              ...prevCache.dpVehicleRoute,
+              [dpVehicleRouteKey]: {
+                route: route,
+              }
+            }
+          }))
+      } else {
+        setDpVehicleRoute([]);
+      }
     } catch (error) {
       console.error("Failed to fetch DP vehicle data:", error);
       setDpVehicles([]);
@@ -225,112 +297,112 @@ const StaticDashboard = () => {
     }
   };
 
-  const fetchVehicleRoute = async () => {
-    if(!selectedVehicle || selectedVehicle === "all") return;
-    setIsLoading(true)
-    try {
-      const response = await fetch(
-        `${API_URL}/vehicle-route/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.data && data.data.length > 0) {
-          const route = data.data
-            .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
-            .map(point => ({
-              lat: Number(point.Latitude),
-              lng: Number(point.Longitude),
-              speed: point.Speed ?? null,
-              acceleration: point.Acceleration ?? null,
-              timeGap: point["Time_Gap"] ?? null
-            }));
-          setVehicleRoute(route);
-          const cacheKey = `${selectedVehicle}`
-          setDataCache(prevCache => ({
-            ...prevCache,
-            vehicleRoute: {
-              ...prevCache.vehicleRoute,
-              [cacheKey]: {
-                route: route,
-              }
-            }
-          }));
-          console.log("Vehicle route received:", data.data);
-          console.log("Filtered route data:", route);
-          if (route.length > 0) {
-            setStartPoint([route[0].lat, route[0].lng]);
-            setEndPoint([route[route.length - 1].lat, route[route.length - 1].lng]);
-          }
-        } else {
-          setVehicleRoute([]);
-          setStartPoint("");
-          setEndPoint("");
-        }
-      } else {
-        const errorData = await response.json();
-        console.error("Failed to fetch vehicle route:", errorData.error);
-        setVehicleRoute([]);
-        setStartPoint("");
-        setEndPoint("");
-      }
-    } catch (err) {
-      console.error("Error fetching vehicle route:", err);
-      setVehicleRoute([]);
-      setStartPoint("");
-      setEndPoint("");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // const fetchVehicleRoute = async () => {
+  //   if(!selectedVehicle || selectedVehicle === "all") return;
+  //   setIsLoading(true)
+  //   try {
+  //     const response = await fetch(
+  //       `${API_URL}/vehicle-route/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv`
+  //     );
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       if (data.data && data.data.length > 0) {
+  //         const route = data.data
+  //           .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
+  //           .map(point => ({
+  //             lat: Number(point.Latitude),
+  //             lng: Number(point.Longitude),
+  //             speed: point.Speed ?? null,
+  //             acceleration: point.Acceleration ?? null,
+  //             timeGap: point["Time_Gap"] ?? null
+  //           }));
+  //         setVehicleRoute(route);
+  //         const cacheKey = `${selectedVehicle}`
+  //         setDataCache(prevCache => ({
+  //           ...prevCache,
+  //           vehicleRoute: {
+  //             ...prevCache.vehicleRoute,
+  //             [cacheKey]: {
+  //               route: route,
+  //             }
+  //           }
+  //         }));
+  //         console.log("Vehicle route received:", data.data);
+  //         console.log("Filtered route data:", route);
+  //         if (route.length > 0) {
+  //           setStartPoint([route[0].lat, route[0].lng]);
+  //           setEndPoint([route[route.length - 1].lat, route[route.length - 1].lng]);
+  //         }
+  //       } else {
+  //         setVehicleRoute([]);
+  //         setStartPoint("");
+  //         setEndPoint("");
+  //       }
+  //     } else {
+  //       const errorData = await response.json();
+  //       console.error("Failed to fetch vehicle route:", errorData.error);
+  //       setVehicleRoute([]);
+  //       setStartPoint("");
+  //       setEndPoint("");
+  //     }
+  //   } catch (err) {
+  //     console.error("Error fetching vehicle route:", err);
+  //     setVehicleRoute([]);
+  //     setStartPoint("");
+  //     setEndPoint("");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
-  const fetchDpVehicleRoute = async () => {
-    if(!selectedVehicle || selectedVehicle === "all") return;
-    setIsLoading(true)
-    try {
-      const response = await fetch(
-        `${API_URL}/vehicle-route/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.data && data.data.length > 0) {
-          const route = data.data
-            .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
-            .map(point => ({
-              lat: Number(point.Latitude),
-              lng: Number(point.Longitude),
-              speed: point.Speed ?? null,
-              acceleration: point.Acceleration ?? null,
-              timeGap: point["Time_Gap"] ?? null
-            }));
-          setDpVehicleRoute(route);
-          const cacheKey = `${selectedVehicle}`
-          setDataCache(prevCache => ({
-            ...prevCache,
-            dpVehicleRoute: {
-              ...prevCache.dpVehicleRoute,
-              [cacheKey]: {
-                route: route,
-              }
-            }
-          }));
-          console.log("Dp Vehicle route received:", data.data);
-          console.log("Dp Filtered route data:", route);
+  // const fetchDpVehicleRoute = async () => {
+  //   if(!selectedVehicle || selectedVehicle === "all") return;
+  //   setIsLoading(true)
+  //   try {
+  //     const response = await fetch(
+  //       `${API_URL}/vehicle-route/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv`
+  //     );
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       if (data.data && data.data.length > 0) {
+  //         const route = data.data
+  //           .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
+  //           .map(point => ({
+  //             lat: Number(point.Latitude),
+  //             lng: Number(point.Longitude),
+  //             speed: point.Speed ?? null,
+  //             acceleration: point.Acceleration ?? null,
+  //             timeGap: point["Time_Gap"] ?? null
+  //           }));
+  //         setDpVehicleRoute(route);
+  //         const cacheKey = `${selectedVehicle}`
+  //         setDataCache(prevCache => ({
+  //           ...prevCache,
+  //           dpVehicleRoute: {
+  //             ...prevCache.dpVehicleRoute,
+  //             [cacheKey]: {
+  //               route: route,
+  //             }
+  //           }
+  //         }));
+  //         console.log("Dp Vehicle route received:", data.data);
+  //         console.log("Dp Filtered route data:", route);
 
-        } else {
-          setDpVehicleRoute([]);
-        }
-      } else {
-        const errorData = await response.json();
-        console.error("Failed to fetch Dp vehicle route:", errorData.error);
-        setDpVehicleRoute([]);
-      }
-    } catch (err) {
-      console.error("Error fetching vehicle route:", err);
-      setDpVehicleRoute([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //       } else {
+  //         setDpVehicleRoute([]);
+  //       }
+  //     } else {
+  //       const errorData = await response.json();
+  //       console.error("Failed to fetch Dp vehicle route:", errorData.error);
+  //       setDpVehicleRoute([]);
+  //     }
+  //   } catch (err) {
+  //     console.error("Error fetching vehicle route:", err);
+  //     setDpVehicleRoute([]);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const fetchRiskScores = async () => {
     setIsRiskLoading(true);

@@ -49,7 +49,6 @@ def apply_differential_privacy(df, numeric_columns=["Speed", "Acceleration", "La
                 senstivities[column] = calculate_location_sensitivity(df_copy, column)
             else:
                 senstivities[column] = calculate_percentile_sensitivity(df_copy, column)
-            print(f"Sensitivity for {column}: {senstivities[column]}")
 
     epsilon_weights = {
         "Speed": 0.3,
@@ -66,8 +65,9 @@ def apply_differential_privacy(df, numeric_columns=["Speed", "Acceleration", "La
 
             noise = column_sensitivity / column_epsilon
 
-            print(f"Epsilon for {column}: {column_epsilon}")
-            print(f"Noise for {column}: {noise}")
+            print(f"LOG: Sensitivity for {column}: {column_sensitivity}")
+            print(f"LOG: Epsilon for {column}: {column_epsilon}")
+            print(f"LOG: Noise for {column}: {noise}")
             
             df_copy[column] = df_copy[column].apply(
                 lambda x: add_laplace_noise(x, column_sensitivity, column_epsilon) if pd.notnull(x) else x
@@ -119,10 +119,13 @@ if __name__ == "__main__":
     if epsilon_input == 0:
         output_file_path = os.path.join(input_dir, "dp_" + os.path.basename(dataset_path))
     else:
+        for filename in os.listdir(input_dir):
+            if filename.startswith("dp_" + os.path.basename(dataset_path).replace(".csv", f"_epsilon_")) and filename.endswith(".csv"):
+                os.remove(os.path.join(input_dir, filename))
         output_file_path = os.path.join(input_dir, "dp_" + os.path.basename(dataset_path).replace(".csv", f"_epsilon_{epsilon}.csv"))
     df_dp.to_csv(output_file_path, index=False)
-    print(f"Differentially private dataset saved as {output_file_path}")
-    print(df_dp.head())
+    print(f"LOG: Differentially private dataset saved as {output_file_path}")
+    # print(df_dp.head())
 
 
 ###################### FOR CONTINOUS DATA ######################

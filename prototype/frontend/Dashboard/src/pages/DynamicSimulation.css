@@ -213,11 +213,20 @@
     cursor: not-allowed;
   }
 
+  .flow-log-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    justify-content: space-between;
+    gap: 20px; /* space between flow chart and log containers */
+  }
+
   .flow-chart-container {
     padding: 20px;
     border: 1px solid #ddd;
     border-radius: 8px;
-    width: 90%;
+    width: 50%;
     max-width: 1525px;
     height: 100%;
     max-height: 500px;
@@ -237,5 +246,51 @@
   .flow-chart label {
     font-weight: bold;
     margin-bottom: 8px;
+  }
+
+  .log-container {
+    width: 50%;
+    max-width: 1525px;
+    max-height: 500px;
+    height: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Allows scroll if logs are too long */
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    box-sizing: border-box;
+    max-height: 500px;
+  }
+
+  .log-list {
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 5px; /* optional: space for scrollbar */
+    text-align: left;
+  }
+
+  .log::before { 
+    content: ">";
+    margin-right: 5px;
+    color: #888;
+  }
+
+  .log.success {
+    background-color: #e3f9e5; /* soft green */
+    /* color: #4caf50; green text */
+    padding: 5px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+  }
+
+  .log.error {
+    background-color: #f8d7da; /* soft red */
+    /* color: #dc3545; red text */
+    padding: 5px;
+    border-radius: 5px;
+    margin-bottom: 5px;
   }
   

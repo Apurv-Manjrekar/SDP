@@ -37,6 +37,15 @@ const DynamicSimulation = () => {
   const [usedDpEpsilon, setDpUsedEpsilon] = useState(5)
   const [usedRiskEpsilon, setRiskUsedEpsilon] = useState(5)
 
+  const [logs, setLogs] = useState([]);
+
+  const handleLogUpdate = (newLogs) => {
+    // Update the logs state by appending new logs
+    setLogs(prevLogs => [...prevLogs, ...newLogs]);
+    // remove any empty logs
+    setLogs(prevLogs => prevLogs.filter(log => log.trim() !== ""));
+  };
+
   const sumoBounds = [
     [41.645520, -72.797705], // SW corner
     [41.888833, -72.553847], // NE corner
@@ -54,9 +63,18 @@ const DynamicSimulation = () => {
 
   const fetchVehicleList = async () => {
     try {
-      const response = await fetch("http://localhost:8000/dynamic-vehicle-list");
+      const functionRoute = "http://localhost:8000/dynamic-vehicle-list";
+      const encodedFunctionRoute = encodeURIComponent(functionRoute);
+
+      const response = await fetch(`http://localhost:8000/call-function?function_route=${encodedFunctionRoute}`);
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        if (result.log_output && result.log_output.length > 0) {
+          const newLogs = result.log_output.split('\n');
+          handleLogUpdate(newLogs);
+        }
+        console.log("LOG: ", logs);
+        const data = result.function_response;
         setVehicleList(["Create New Vehicle", ...data]);
         if (data.length > 0 && !selectedVehicle) {
           setSelectedVehicle(data[0].id);
@@ -121,11 +139,24 @@ const DynamicSimulation = () => {
     
     setIsLoadingData(true);
     try {
+      const functionRoute = `http://localhost:8000/vehicle-data?dynamic=true&data_file=${selectedVehicle}&page=${currentPage}&per_page=50`;
+      const encodedFunctionRoute = encodeURIComponent(functionRoute);
+
       const response = await fetch(
-        `http://localhost:8000/vehicle-data?dynamic=true&data_file=${selectedVehicle}&page=${currentPage}&per_page=50`
+        `http://localhost:8000/call-function?function_route=${encodedFunctionRoute}`
+
+        // `http://localhost:8000/vehicle-data?dynamic=true&data_file=${selectedVehicle}&page=${currentPage}&per_page=50`
       );
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        if (result.log_output && result.log_output.length > 0) {
+          const newLogs = result.log_output.split('\n');
+          handleLogUpdate(newLogs);
+        }
+        console.log("LOG: ", logs);
+        console.log("Received Logs:", result.log_output);
+        const data = result.function_response;
+
         setVehicleData(data.data);
         setTotalPages(data.pagination.total_pages);
       } else {
@@ -144,11 +175,20 @@ const DynamicSimulation = () => {
     
     setIsLoadingData(true);
     try {
+      const functionRoute = `http://localhost:8000/vehicle-route?dynamic=true&data_file=${selectedVehicle}`;
+      const encodedFunctionRoute = encodeURIComponent(functionRoute);
       const response = await fetch(
-        `http://localhost:8000/vehicle-route?dynamic=true&data_file=${selectedVehicle}`
+        `http://localhost:8000/call-function?function_route=${encodedFunctionRoute}`
+        // `http://localhost:8000/vehicle-route?dynamic=true&data_file=${selectedVehicle}`
       );
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        if (result.log_output && result.log_output.length > 0) {
+          const newLogs = result.log_output.split('\n');
+          handleLogUpdate(newLogs);
+        }
+        console.log("LOG: ", logs);
+        const data = result.function_response;
         if (data.data && data.data.length > 0) {
           const route = data.data
             .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
@@ -194,12 +234,22 @@ const DynamicSimulation = () => {
     setIsLoadingData(true);
     try {
       const dpFileName = `dp_${selectedVehicle}`;
+
+      const functionRoute = `http://localhost:8000/vehicle-route?dynamic=true&data_file=${dpFileName}`;
+      const encodedFunctionRoute = encodeURIComponent(functionRoute);
       const response = await fetch(
-        `http://localhost:8000/vehicle-route?dynamic=true&data_file=${dpFileName}`
+        `http://localhost:8000/call-function?function_route=${encodedFunctionRoute}`
+        // `http://localhost:8000/vehicle-route?dynamic=true&data_file=${dpFileName}`
       );
       if (response.ok) {
         setIsDpApplied(true);
-        const data = await response.json();
+        const result = await response.json();
+        if (result.log_output && result.log_output.length > 0) {
+          const newLogs = result.log_output.split('\n');
+          handleLogUpdate(newLogs);
+        }
+        console.log("LOG: ", logs);
+        const data = result.function_response;
         if (data.data && data.data.length > 0) {
           const route = data.data
             .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
@@ -241,12 +291,22 @@ const DynamicSimulation = () => {
     setIsLoadingData(true);
     try {
       const dpFileName = `dp_${selectedVehicle}`;
+
+      const functionRoute = `http://localhost:8000/vehicle-data?dynamic=true&data_file=${dpFileName}&page=${dpCurrentPage}&per_page=50`;
+      const encodedFunctionRoute = encodeURIComponent(functionRoute);
       const response = await fetch(
-        `http://localhost:8000/vehicle-data?dynamic=true&data_file=${dpFileName}&page=${dpCurrentPage}&per_page=50`
+        `http://localhost:8000/call-function?function_route=${encodedFunctionRoute}`
+        // `http://localhost:8000/vehicle-data?dynamic=true&data_file=${dpFileName}&page=${dpCurrentPage}&per_page=50`
       );
       if (response.ok) {
         setIsDpApplied(true);
-        const data = await response.json();
+        const result = await response.json();
+        if (result.log_output && result.log_output.length > 0) {
+          const newLogs = result.log_output.split('\n');
+          handleLogUpdate(newLogs);
+        }
+        console.log("LOG: ", logs);
+        const data = result.function_response;
         setDpVehicleData(data.data);
         setDpTotalPages(data.pagination.total_pages)
         setDpUsedEpsilon(data.epsilon)
@@ -269,7 +329,7 @@ const DynamicSimulation = () => {
     if (isDpApplied) {
       fetchDpVehicleData();
     }
-  }, [isDpApplied, dpCurrentPage]);
+  }, [dpCurrentPage]);
 
   const applyDifferentialPrivacy = async () => {
     if (!selectedVehicle) return;
@@ -278,19 +338,29 @@ const DynamicSimulation = () => {
     
     setIsApplyingDP(true);
     try {
-      const response = await fetch("http://localhost:8000/apply-dp", {
+      const functionRoute = `http://localhost:8000/apply-dp`;
+      const response = await fetch("http://localhost:8000/call-function", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          dynamic: true,
-          data_file: selectedVehicle,
-          epsilon: epsilon.toString(),
+          function_route: functionRoute,
+          payload: {
+            dynamic: true,
+            data_file: selectedVehicle,
+            epsilon: epsilon.toString(),
+          }
         }),
       });
       
       if (response.ok) {
+        const result = await response.json();
+        if (result.log_output && result.log_output.length > 0) {
+          const newLogs = result.log_output.split('\n');
+          handleLogUpdate(newLogs);
+        }
+        console.log("LOG: ", logs);
         setSuccessMessage("Differential privacy applied successfully.");
         setIsDpApplied(true);
       } else {
@@ -301,6 +371,8 @@ const DynamicSimulation = () => {
       setError("Error applying differential privacy.");
     } finally {
       setIsApplyingDP(false);
+      fetchDpVehicleData();
+      fetchDpVehicleRoute();
     }
   };
 
@@ -312,18 +384,28 @@ const DynamicSimulation = () => {
     
     setIsCalculatingRisk(true);
     try {
-      const response = await fetch("http://localhost:8000/calculate-risk-score", {
+      const functionRoute = `http://localhost:8000/calculate-risk-score`;
+      const response = await fetch("http://localhost:8000/call-function", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          dynamic: true,
-          data_file: selectedVehicle,
+          function_route: functionRoute,
+          payload: {
+            dynamic: true,
+            data_file: selectedVehicle
+          }
         }),
       });
       
       if (response.ok) {
+        const result = await response.json();
+        if (result.log_output && result.log_output.length > 0) {
+          const newLogs = result.log_output.split('\n');
+          handleLogUpdate(newLogs);
+        }
+        console.log("LOG: ", logs);
         setSuccessMessage("Risk scores calculated successfully.");
         fetchRiskScores();
       } else {
@@ -334,6 +416,7 @@ const DynamicSimulation = () => {
       setError("Error calculating risk scores.");
     } finally {
       setIsCalculatingRisk(false);
+      fetchRiskScores();
     }
   };
 
@@ -341,11 +424,20 @@ const DynamicSimulation = () => {
     if (!selectedVehicle) return;
     
     try {
+      const functionRoute = `http://localhost:8000/get-risk-score?dynamic=true&data_file=${selectedVehicle}`;
+      const encodedFunctionRoute = encodeURIComponent(functionRoute);
       const response = await fetch(
-        `http://localhost:8000/get-risk-score?dynamic=true&data_file=${selectedVehicle}`
+        `http://localhost:8000/call-function?function_route=${encodedFunctionRoute}`
+        // `http://localhost:8000/get-risk-score?dynamic=true&data_file=${selectedVehicle}`
       );
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        if (result.log_output && result.log_output.length > 0) {
+          const newLogs = result.log_output.split('\n');
+          handleLogUpdate(newLogs);
+        }
+        console.log("LOG: ", logs);
+        const data = result.function_response;
         setRiskScores(data.data);
         console.log("Risk scores received:", data.data);
         setRiskUsedEpsilon(data.epsilon)
@@ -374,21 +466,32 @@ const DynamicSimulation = () => {
       vehicle_behavior: vehicleBehavior,
     };
 
+    const functionRoute = "http://localhost:8000/run-simulation";
+
     try {
-      const response = await fetch("http://localhost:8000/run-simulation", {
+      const response = await fetch("http://localhost:8000/call-function", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestData),
+        body: JSON.stringify({
+          function_route: functionRoute,
+          payload: requestData
+        }),
       });
 
       const result = await response.json();
+      if (result.log_output && result.log_output.length > 0) {
+        const newLogs = result.log_output.split('\n');
+        handleLogUpdate(newLogs);
+      }
+      console.log("LOG: ", logs);
+      const data = result.function_response;
 
       if (response.ok) {
         setSuccessMessage("Simulation completed successfully.");
       } else {
-        setError(result.error || "An error occurred during the simulation.");
+        setError(data.error || "An error occurred during the simulation.");
       }
     } catch (err) {
       setError("Failed to communicate with the backend.");
@@ -869,12 +972,29 @@ const DynamicSimulation = () => {
           )}
         </div>
 
-        {/* Flow Chart */}
+        {/* Flow Chart and Logs */}
         {view === "run-simulation" && (
-          <div className="flow-chart-container">
-            <div className="flow-chart">
-              <label>Simulation Flow</label>
-              <SimulationFlow />
+          <div className="flow-log-container">
+            <div className="flow-chart-container">
+              <div className="flow-chart">
+                <label>Simulation Flow</label>
+                <SimulationFlow />
+              </div>
+            </div>
+            <div className="log-container">
+              <div className="log-list">
+                {/* Display the logs */}
+                {logs.map((log, index) => {
+                  // Check if the log contains 'ERROR'
+                  const logClass = log.includes("ERROR") ? "error" : "success"; // Default to 'success' if not 'ERROR'
+
+                  return (
+                    <div key={index} className={`log ${logClass}`}>
+                      {log}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

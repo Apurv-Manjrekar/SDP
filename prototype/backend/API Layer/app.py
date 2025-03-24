@@ -4,12 +4,37 @@ import pandas as pd
 import os 
 import subprocess
 import json
-from ast import literal_eval
 import re
+import sys
+import io
+import requests
+import contextlib
+import logging
+
 
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+
+class LogFilter(logging.Filter):
+    def filter(self, record):
+        # Only capture logs that contain "LOG: "
+        return "LOG: " in record.getMessage()
+
+# Setup logging to capture logs into a StringIO buffer
+log_stream = io.StringIO()
+log_handler = logging.StreamHandler(log_stream)
+log_handler.setLevel(logging.DEBUG)
+log_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+# Create another handler to print logs to stdout (console)
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(logging.Formatter('%(message)s'))
+
+logging.basicConfig(level=logging.DEBUG, handlers=[log_handler, console_handler])
+
+log_handler.addFilter(LogFilter())
 
 CURR_DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 SCRIPTS_DIR_PATH = os.path.join(CURR_DIR_PATH, "..", "SUMO", "scripts")
@@ -53,6 +78,7 @@ def run_simulation():
         vehicle_behavior = data.get('vehicle_behavior')
 
         if not start_point or not end_point or not vehicle_type or not vehicle_behavior:
+            logging.error("LOG: !ERROR! Missing required parameters")
             return jsonify({"error": "Missing required parameters"}), 400
         vehicle_types = {
             "car": "veh_passenger",
@@ -67,8 +93,9 @@ def run_simulation():
             "cautious": "cautious",
         }
         vehicle_behavior = vehicle_behaviors[vehicle_behavior]
-        print(f"Running command: python {SUMO_SCRIPT_PATH} {json.dumps(data)} --dynamic true --start_point {start_point} --end_point {end_point} --vehicle_type {vehicle_type} --behavior {vehicle_behavior}")
-        subprocess.run([
+        # print(f"LOG: Running command: python {SUMO_SCRIPT_PATH} {json.dumps(data)} --dynamic true --start_point {start_point} --end_point {end_point} --vehicle_type {vehicle_type} --behavior {vehicle_behavior}")
+        logging.info(f"LOG: Running command: python {SUMO_SCRIPT_PATH} {json.dumps(data)} --dynamic true --start_point {start_point} --end_point {end_point} --vehicle_type {vehicle_type} --behavior {vehicle_behavior}")
+        result = subprocess.run([
             "python", 
             SUMO_SCRIPT_PATH, 
             "--dynamic", "true", 
@@ -76,9 +103,23 @@ def run_simulation():
             "--end_point", str(end_point),
             "--vehicle_type", vehicle_type, 
             "--behavior", vehicle_behavior
-        ], check=True)
+        ], capture_output=True, text=True, check=True)
+        if result.stdout:
+            # Split the stdout into lines and iterate over each line
+            for line in result.stdout.splitlines():
+                # If the line doesn't already start with "LOG: ", prepend it
+                if not line.startswith("LOG: "):
+                    line = f"LOG: {line}"
+                logging.info(line)
+        if result.stderr:
+            logging.error(f"LOG: !ERROR! Simulation failed.\n{result.stderr}")
+        # print(result.stdout)
+        # print("LOG: Simulation completed successfully.")
+        logging.info("LOG: Simulation completed successfully.")
         return jsonify({"message": "Simulation completed successfully."}), 200
     except subprocess.CalledProcessError as e:
+        # print(f"LOG: !ERROR! Simulation failed.")
+        logging.error(f"LOG: !ERROR! Simulation failed.")
         return jsonify({"error": f"Simulation failed: {str(e)}"}), 500
     
 @app.route('/vehicle-list', methods=['GET'])
@@ -86,6 +127,7 @@ def get_vehicle_list():
     """
     Returns a list of unique vehicle IDs from the dataset.
     """
+    print("LOG: Fetching vehicle list...")
     if not os.path.exists(DATA_FILE_PATH):
         return jsonify({"error": "No data available. Run the simulation first."}), 404
     try:
@@ -99,9 +141,12 @@ def get_vehicle_list():
         
         # Sort the vehicle IDs for better UX
         vehicle_list = sorted(list(unique_vehicles), key=lambda x: (isinstance(x, str), x))
+
+        print("LOG: Vehicle list fetched successfully.")
         
         return jsonify(vehicle_list)
     except Exception as e:
+        print(f"LOG: !ERROR! Failed to fetch vehicle list.")
         return jsonify({"error": f"Failed to fetch vehicle list: {str(e)}"}), 500
     
 @app.route('/dynamic-vehicle-list', methods=['GET'])
@@ -109,13 +154,20 @@ def get_dynamic_vehicle_list():
     """
     Returns a list of unique vehicle IDs from the dataset.
     """
+    # print("LOG: Fetching vehicle list...")
+    logging.info("LOG: Fetching vehicle list...")
     dynamic_vehicles = os.listdir(DYNAMIC_RESULTS_DIR_PATH)
     dynamic_vehicles = [file for file in dynamic_vehicles if file.endswith(".csv") and not file.startswith("dp_") and not file.endswith("_risk_scores.csv")]
     
     try:
-        vehicle_list = sorted(dynamic_vehicles, key=lambda x: (isinstance(x, str), x))        
+        vehicle_list = sorted(dynamic_vehicles, key=lambda x: (isinstance(x, str), x))
+
+        # print("LOG: Vehicle list fetched successfully.")
+        logging.info("LOG: Vehicle list fetched successfully.")
         return jsonify(vehicle_list)
     except Exception as e:
+        # print(f"LOG: !ERROR! Failed to fetch vehicle list.")
+        logging.error(f"LOG: !ERROR! Failed to fetch vehicle list.")
         return jsonify({"error": f"Failed to fetch vehicle list: {str(e)}"}), 500
 
 @app.route('/vehicle-data', methods=['GET'])
@@ -127,6 +179,9 @@ def get_vehicle_data():
     data_file = request.args.get('data_file')
 
     epsilon = None
+
+    # print(f"LOG: Fetching vehicle data from data file: {data_file}")
+    logging.info(f"LOG: Fetching vehicle data from data file: {data_file}")
 
     if dynamic:
         if data_file.startswith("dp_"):
@@ -141,15 +196,19 @@ def get_vehicle_data():
                 match = re.search(r'_epsilon_([\d\.]+)', file)
                 if match:
                     epsilon = float(match.group(1)[:-1])  # Extract the epsilon value (digit)
-                    print(f"Found file: {file}, epsilon set to: {epsilon}")
+                    # print(f"Found file: {file}, epsilon set to: {epsilon}")
+                    logging.info(f"Found file: {file}, epsilon set to: {epsilon}")
                 else:
-                    print("No valid epsilon value found in the filename.")
+                    # print("No valid epsilon value found in the filename.")
+                    logging.info("No valid epsilon value found in the filename.")
             data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, file)
         else:
             data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
     else:
         data_file_path = os.path.join(RESULTS_DIR_PATH, data_file)
     if not os.path.exists(data_file_path):
+        # print(f"LOG: Vehicle data not found for data file: {data_file_path}.")
+        logging.error(f"LOG: !ERROR! Vehicle data not found for data file: {data_file_path}.")
         return jsonify({"error": "No data available. Run the simulation first."}), 404
 
     page = request.args.get('page', default=1, type=int)
@@ -173,6 +232,9 @@ def get_vehicle_data():
             if col in df.columns:
                 df[col] = df[col].map({1: True, 0: False, 'True': True, 'False': False})
         
+        # print(f"LOG: Vehicle data fetched successfully for data file: {data_file_path}.")
+        logging.info(f"LOG: Vehicle data fetched successfully for data file: {data_file_path}.")
+        
         if epsilon:
             return jsonify({
                 "data": df.to_dict(orient='records'),
@@ -195,6 +257,8 @@ def get_vehicle_data():
                 }
             })
     except Exception as e:
+        # print(f"LOG: !ERROR! Failed to fetch vehicle data for data file: {data_file_path}.")
+        logging.error(f"LOG: !ERROR! Failed to fetch vehicle data for data file: {data_file_path}.")
         return jsonify({"error": f"Failed to fetch data: {str(e)}"}), 500
 
 @app.route('/vehicle-data/<vehicle_id>', methods=['GET'])
@@ -204,12 +268,19 @@ def get_vehicle_data_by_id(vehicle_id):
     """
     dynamic = request.args.get('dynamic', 'false') == 'true'
     data_file = request.args.get('data_file')
+    get_route = request.args.get('get_route')
+    if get_route is None:
+        get_route = False
+    get_route = get_route == 'true'
+
+    print(f"LOG: Fetching vehicle data for vehicle ID: {vehicle_id}")
 
     if dynamic:    
         data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
     else:
         data_file_path = os.path.join(RESULTS_DIR_PATH, data_file)
     if not os.path.exists(data_file_path):
+        print("LOG: Vehicle data not found for data file:", data_file_path)
         return jsonify({"error": "No data available. Run the simulation first."}), 404
 
     # Get pagination parameters
@@ -217,20 +288,37 @@ def get_vehicle_data_by_id(vehicle_id):
     per_page = request.args.get('per_page', default=50, type=int)
     
     try:
+        if get_route:
+            print(f"LOG: Fetching vehicle route for vehicle ID: {vehicle_id}")
+            route_columns = ['Latitude', 'Longitude', 'Speed', 'Acceleration', 'Time_Gap']
+            vehicle_route_chunks = []
         # Use dask for efficient processing of large CSV files
-        chunks = []
+        vehicle_data_chunks = []
         total_matching_rows = 0
         
         # First pass: count total matching rows (for pagination info)
         # For very large files, you might want to store this info separately
         for chunk in pd.read_csv(data_file_path, chunksize=10000):
-            vehicle_chunk = chunk[chunk['Vehicle_ID'].astype(str) == str(vehicle_id)]
+            vehicle_chunk = chunk[chunk['Vehicle_ID'].astype(str) == str(vehicle_id)][route_columns]
             total_matching_rows += len(vehicle_chunk)
+            
+            if get_route:
+                vehicle_route_chunks.append(vehicle_chunk)
+        
+        if get_route and vehicle_route_chunks:
+            vehicle_route_df = pd.concat(vehicle_route_chunks) if len(vehicle_route_chunks) > 1 else vehicle_route_chunks[0]
+            vehicle_route_df = vehicle_route_df.replace([float('inf'), float('-inf')], "None")
+            vehicle_route_df = vehicle_route_df.where(pd.notna(vehicle_route_df), "None")
+
+            vehicle_route = vehicle_route_df.to_dict(orient='records')
+            print(f"LOG: Vehicle route fetched successfully for vehicle ID: {vehicle_id}.")
         
         # If no matching rows found
         if total_matching_rows == 0:
+            print(f"LOG: No data found for vehicle ID: {vehicle_id}")
             return jsonify({
                 "data": [],
+                "route": [],
                 "pagination": {
                     "page": page,
                     "per_page": per_page,
@@ -252,7 +340,7 @@ def get_vehicle_data_by_id(vehicle_id):
                 continue
                 
             relevant_rows = vehicle_chunk.iloc[skip_rows:skip_rows + rows_to_collect]
-            chunks.append(relevant_rows)
+            vehicle_data_chunks.append(relevant_rows)
             
             collected_rows += len(relevant_rows)
             if collected_rows >= per_page:
@@ -262,8 +350,8 @@ def get_vehicle_data_by_id(vehicle_id):
             rows_to_collect = per_page - collected_rows
         
         # Combine all chunks into a single dataframe
-        if chunks:
-            df = pd.concat(chunks) if len(chunks) > 1 else chunks[0]
+        if vehicle_data_chunks:
+            df = pd.concat(vehicle_data_chunks) if len(vehicle_data_chunks) > 1 else vehicle_data_chunks[0]
             
             # Proper handling of NaN, infinity, and NA values for JSON serialization
             df = df.replace([float('inf'), float('-inf')], "None")
@@ -275,15 +363,29 @@ def get_vehicle_data_by_id(vehicle_id):
                 if col in df.columns:
                     df[col] = df[col].map({1: True, 0: False, 'True': True, 'False': False})
             
-            return jsonify({
-                "data": df.to_dict(orient='records'),
-                "pagination": {
-                    "page": page,
-                    "per_page": per_page,
-                    "total": total_matching_rows,
-                    "total_pages": (total_matching_rows + per_page - 1) // per_page
-                }
-            })
+            print(f"LOG: Vehicle data fetched successfully for vehicle ID: {vehicle_id}.")
+            if get_route:
+                return jsonify({
+                    "data": df.to_dict(orient='records'),
+                    "route": vehicle_route,
+                    "pagination": {
+                        "page": page,
+                        "per_page": per_page,
+                        "total": total_matching_rows,
+                        "total_pages": (total_matching_rows + per_page - 1) // per_page
+                    }
+                })
+            else:
+                return jsonify({
+                    "data": df.to_dict(orient='records'),
+                    "route": [],
+                    "pagination": {
+                        "page": page,
+                        "per_page": per_page,
+                        "total": total_matching_rows,
+                        "total_pages": (total_matching_rows + per_page - 1) // per_page
+                    }
+                })
         else:
             return jsonify({
                 "data": [],
@@ -295,6 +397,7 @@ def get_vehicle_data_by_id(vehicle_id):
                 }
             })
     except Exception as e:
+        print(f"LOG: !ERROR! Failed to fetch vehicle data for vehicle ID: {vehicle_id}.")
         return jsonify({"error": f"Failed to fetch vehicle data: {str(e)}"}), 500
 
 @app.route('/vehicle-route', methods=['GET'])
@@ -304,6 +407,9 @@ def get_vehicle_route():
     """
     dynamic = request.args.get('dynamic', 'false') == 'true'
     data_file = request.args.get('data_file')
+
+    # print(f"LOG: Fetching vehicle route from data file: {data_file}")
+    logging.info(f"LOG: Fetching vehicle route from data file: {data_file}")
 
     if dynamic:
         if data_file.startswith("dp_"):
@@ -322,6 +428,8 @@ def get_vehicle_route():
     else:
         data_file_path = os.path.join(RESULTS_DIR_PATH, data_file)
     if not os.path.exists(data_file_path):
+        # print(f"LOG: Vehicle route not found for data file: {data_file}")
+        logging.error(f"LOG: !ERROR! Vehicle route not found for data file: {data_file}")
         return jsonify({"error": "No data available. Run the simulation first."}), 404
     
     vehicle_route = []
@@ -333,8 +441,12 @@ def get_vehicle_route():
         df = df.where(pd.notna(df), "None")
         existing_columns = [col for col in columns_to_return if col in df.columns]
         vehicle_route = df[existing_columns].to_dict(orient='records')
+        # print(f"LOG: Vehicle route fetched successfully for data file: {data_file}")
+        logging.info(f"LOG: Vehicle route fetched successfully for data file: {data_file}")
         return jsonify({"data": vehicle_route}), 200
     except Exception as e:
+        # print(f"LOG: !ERROR! Failed to fetch vehicle route for data file: {data_file}")
+        logging.error(f"LOG: !ERROR! Failed to fetch vehicle route for data file: {data_file}")
         return jsonify({"error": f"Failed to fetch vehicle route: {str(e)}"}), 500
 
 @app.route('/vehicle-route/<vehicle_id>', methods=['GET'])
@@ -345,11 +457,14 @@ def get_vehicle_route_by_id(vehicle_id):
     dynamic = request.args.get('dynamic', 'false') == 'true'
     data_file = request.args.get('data_file')
 
+    print(f"LOG: Fetching vehicle route for vehicle ID: {vehicle_id}")
+
     if dynamic:    
         data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
     else:
         data_file_path = os.path.join(RESULTS_DIR_PATH, data_file)
     if not os.path.exists(data_file_path):
+        print(f"LOG: Vehicle route not found for vehicle ID: {vehicle_id}")
         return jsonify({"error": "No data available. Run the simulation first."}), 404
     
     vehicle_route = []
@@ -365,9 +480,11 @@ def get_vehicle_route_by_id(vehicle_id):
             df = df.where(pd.notna(df), "None")
 
             vehicle_route = df.to_dict(orient='records')
-            
+        
+        print(f"LOG: Vehicle route fetched successfully for vehicle ID: {vehicle_id}")
         return jsonify({"data": vehicle_route}), 200
     except Exception as e:
+        print(f"LOG: !ERROR! Failed to fetch vehicle route for vehicle ID: {vehicle_id}")
         return jsonify({"error": f"Failed to fetch vehicle route: {str(e)}"}), 500
 
 @app.route('/apply-dp', methods=['POST'])
@@ -381,6 +498,11 @@ def apply_dp():
     epsilon = data.get('epsilon')
     # epsilon = literal_eval(data.get('epsilon'))
 
+    result = None
+
+    # print(f"LOG: Applying differential privacy to data file: {data_file} with epsilon: {epsilon}")
+    logging.info(f"LOG: Applying differential privacy to data file: {data_file} with epsilon: {epsilon}")
+
     if dynamic == True:
         data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
     else:
@@ -389,46 +511,41 @@ def apply_dp():
         return jsonify({"error": "No data available. Run the simulation first."}), 404
     
     try:
-        subprocess.run(["python", DP_SCRIPT_PATH, "--dataset", data_file_path, "--epsilon", epsilon], check=True)
-        return jsonify({"message": "Differential privacy applied successfully."}), 200
+        # print(f"LOG: Running command: python {DP_SCRIPT_PATH} --dataset {data_file_path} --epsilon {epsilon}")
+        logging.info(f"LOG: Running command: python {DP_SCRIPT_PATH} --dataset {data_file_path} --epsilon {epsilon}")
+        result = subprocess.run(["python", DP_SCRIPT_PATH, "--dataset", data_file_path, "--epsilon", epsilon], capture_output=True, text=True, check=True)
+        # print(result.stdout)
+        # subprocess.run(["python", DP_SCRIPT_PATH, "--dataset", data_file_path, "--epsilon", epsilon], check=True)
+        # print("LOG: Differential privacy applied successfully.")
+        if result.stdout:
+            # Split the stdout into lines and iterate over each line
+            for line in result.stdout.splitlines():
+                # If the line doesn't already start with "LOG: ", prepend it
+                if not line.startswith("LOG: "):
+                    line = f"LOG: {line}"
+                logging.info(line)
+        if result.stderr:
+            logging.error(f"LOG: !ERROR! Failed to apply differential privacy.\n{result.stderr}")
+
+        logging.info("LOG: Differential privacy applied successfully.")
+        return jsonify({"message": "Differential privacy applied successfully.", "log_output": result.stdout}), 200
     except Exception as e:
-        return jsonify({"error": f"Failed to apply differential privacy: {str(e)}"}), 500
-
-
-# @app.route('/preprocess-data', methods=['POST'])
-# def preprocess_data():
-#     """
-#     Preprocesses the vehicle data.
-#     """
-#     # Get which dataset from request
-#     data = request.get_json()
-#     dynamic = data.get('dynamic')
-#     data_file = data.get('data_file')
-
-#     if dynamic == True:
-#         data_file_path = os.path.join("dynamic", data_file, '.csv')
-#     else:
-#         data_file_path = os.path.join(data_file, '.csv')
-    
-#     if not os.path.exists(data_file_path):
-#         return jsonify({"error": "No data available. Run the simulation first."}), 404
-
-#     # Run the data preprocessing script
-#     try:
-#         subprocess.run(["python", PROCESS_SCRIPT_PATH, data_file_path], check=True)
-#         return jsonify({"message": "Data preprocessed successfully."}), 200
-#     except Exception as e:
-#         return jsonify({"error": f"Failed to preprocess data: {str(e)}"}), 500
+        # print(f"LOG: !ERROR! Failed to apply differential privacy to data file: {data_file}")
+        logging.error(f"LOG: !ERROR! Failed to apply differential privacy to data file: {data_file}")
+        return jsonify({"error": f"Failed to apply differential privacy: {str(e)}", "log_output": result.stdout if result else ""}), 500
 
 @app.route('/calculate-risk-score', methods=['POST'])
 def calculate_risk_score():
     """
-    Fetches the risk score for a given vehicle ID.
+    Calculates the risk scores for the vehicle data.
     """
     # Get the dataset from the request
     data = request.get_json()
     dynamic = data.get('dynamic')
     data_file = data.get('data_file')
+
+    # print(f"LOG: Calculating risk score for data file: {data_file}")
+    logging.info(f"LOG: Calculating risk score for data file: {data_file}")
 
     if dynamic == True:
         data_file_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, data_file)
@@ -446,18 +563,52 @@ def calculate_risk_score():
         dp_data_file_path = os.path.join(RESULTS_DIR_PATH, f"dp_{data_file}")
     
     if not os.path.exists(data_file_path):
+        # print(f"LOG: !ERROR! Original data not found for data file: {data_file}")
+        logging.error(f"LOG: !ERROR! Original data not found for data file: {data_file}")
         return jsonify({"error": "Original data available. Run the simulation first."}), 404
     
     if not os.path.exists(dp_data_file_path):
+        # print(f"LOG: !ERROR! DP data not found for data file: {data_file}")
+        logging.error(f"LOG: !ERROR! DP data not found for data file: {data_file}")
         return jsonify({"error": "DP data available. Apply differential privacy first."}), 404
     
     # Run the risk score script
     try:
-        subprocess.run(["python", RISK_SCORE_SCRIPT_PATH, "--dataset", data_file_path], check=True)
-        subprocess.run(["python", RISK_SCORE_SCRIPT_PATH, "--dataset", dp_data_file_path], check=True)
-        return jsonify({"message": "Risk scores calculated successfully."}), 200
+        # print(f"LOG: Running command: python {RISK_SCORE_SCRIPT_PATH} --dataset {data_file_path}")
+        # print(f"LOG: Running command: python {RISK_SCORE_SCRIPT_PATH} --dataset {dp_data_file_path}")
+        logging.info(f"LOG: Running command: python {RISK_SCORE_SCRIPT_PATH} --dataset {data_file_path}")
+        logging.info(f"LOG: Running command: python {RISK_SCORE_SCRIPT_PATH} --dataset {dp_data_file_path}")
+        result = subprocess.run(["python", RISK_SCORE_SCRIPT_PATH, "--dataset", data_file_path], capture_output=True, text=True, check=True)
+        # print(result.stdout)
+        result_dp = subprocess.run(["python", RISK_SCORE_SCRIPT_PATH, "--dataset", dp_data_file_path], capture_output=True, text=True, check=True)
+        # print(result_dp.stdout)
+        # subprocess.run(["python", RISK_SCORE_SCRIPT_PATH, "--dataset", data_file_path], check=True)
+        # subprocess.run(["python", RISK_SCORE_SCRIPT_PATH, "--dataset", dp_data_file_path], check=True)
+        # print("LOG: Risk scores calculated successfully.")
+        if result.stdout:
+            # Split the stdout into lines and iterate over each line
+            for line in result.stdout.splitlines():
+                # If the line doesn't already start with "LOG: ", prepend it
+                if not line.startswith("LOG: "):
+                    line = f"LOG: {line}"
+                logging.info(line)
+        if result_dp.stdout:
+            # Split the stdout into lines and iterate over each line
+            for line in result_dp.stdout.splitlines():
+                # If the line doesn't already start with "LOG: ", prepend it
+                if not line.startswith("LOG: "):
+                    line = f"LOG: {line}"
+                logging.info(line)
+        if result.stderr:
+            logging.error(f"LOG: !ERROR! Failed to calculate risk score.\n{result.stderr}")
+        if result_dp.stderr:
+            logging.error(f"LOG: !ERROR! Failed to calculate risk score.\n{result_dp.stderr}")
+        logging.info("LOG: Risk scores calculated successfully.")
+        return jsonify({"message": "Risk scores calculated successfully.", "log_output": result.stdout + result_dp.stdout}), 200
     except Exception as e:
-        return jsonify({"error": f"Failed to calculate risk score: {str(e)}"}), 500
+        # print(f"LOG: !ERROR! Failed to calculate risk score for data file: {data_file}")
+        logging.error(f"LOG: !ERROR! Failed to calculate risk score for data file: {data_file}")
+        return jsonify({"error": f"Failed to calculate risk score: {str(e)}", "log_output": result.stdout + result_dp.stdout}), 500
     
 @app.route('/get-risk-score', methods=['GET'])
 def get_risk_score():
@@ -467,6 +618,9 @@ def get_risk_score():
     dynamic = request.args.get('dynamic', 'false') == 'true'
     data_file = request.args.get('data_file')
     vehicle_id = request.args.get('vehicle_id')
+
+    # print(f"LOG: Fetching risk score for data file: {data_file}")
+    logging.info(f"LOG: Fetching risk score for data file: {data_file}")
 
     epsilon = None
 
@@ -483,9 +637,11 @@ def get_risk_score():
             match = re.search(r'_epsilon_([\d\.]+)', file)
             if match:
                 epsilon = float(match.group(1)[:-1])   # Extract the epsilon value (digit)
-                print(f"Found file: {file}, epsilon set to: {epsilon}")
+                # print(f"Found file: {file}, epsilon set to: {epsilon}")
+                logging.info(f"Found file: {file}, epsilon set to: {epsilon}")
             else:
-                print("No valid epsilon value found in the filename.")
+                # print("No valid epsilon value found in the filename.")
+                logging.info("No valid epsilon value found in the filename.")
         dp_risk_path = os.path.join(DYNAMIC_RESULTS_DIR_PATH, file)
     else:
         original_risk_path = os.path.join(RESULTS_DIR_PATH, data_file.replace('.csv', '_risk_scores.csv'))
@@ -509,8 +665,12 @@ def get_risk_score():
         result["dp"] = dp_df.to_dict(orient='records')
     
     if result["original"] is None and result["dp"] is None:
+        # print(f"LOG: !ERROR! No risk scores found for data file: {data_file}")
+        logging.error(f"LOG: !ERROR! No risk scores found for data file: {data_file}")
         return jsonify({"error": "No risk scores available. Calculate risk scores first."}), 404
     
+    # print(f"LOG: Risk scores fetched successfully for data file: {data_file}")
+    logging.info(f"LOG: Risk scores fetched successfully for data file: {data_file}")
     if epsilon:
         return jsonify({"data": result, "epsilon": epsilon}), 200
     else:
@@ -539,6 +699,54 @@ def get_image():
     Serves the risk_vs_epsilon.png file from the 'Epsilon changes' directory.
     """
     return send_from_directory(IMAGE_DIR_PATH, "risk_vs_epsilon.png")
+
+@app.route('/call-function', methods=['GET', 'POST'])
+def call_function():
+
+    function_route = request.args.get('function_route') if request.method == 'GET' else request.json.get('function_route')
+
+    if not function_route:
+        return jsonify({"error": "No function_route provided"}), 400
+
+    # old_stdout = sys.stdout
+    # new_stdout = io.StringIO()
+    # sys.stdout = new_stdout
+    
+    log_output = ""
+    success = True
+    # print(f"LOG: Calling function: {function_route}")
+    try:
+        if request.method == 'POST':
+            payload = request.json.get("payload")
+            result = requests.post(function_route, json=payload)
+        else:
+            result = requests.get(function_route)
+        # Check if the response is JSON
+        if result.status_code == 200:
+            response_data = result.json()
+        else:
+            response_data = result.text
+            status_code = result.status_code
+            success = False
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+    
+    # finally:
+        # sys.stdout = old_stdout
+        # log_output += new_stdout.getvalue()
+        # print(f"Log Output\n{log_output}")
+    
+    log_output += log_stream.getvalue()
+    log_stream.truncate(0)
+    log_stream.seek(0)
+    # logging.debug(f"Log Output\n{log_output}")
+    # print(f"Log Output\n{log_output}")
+
+
+    if not success:
+        return jsonify({"error": response_data, "log_output": log_output}), status_code
+    return jsonify({"function_response": response_data, "log_output": log_output}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, host='localhost', port=8000)
