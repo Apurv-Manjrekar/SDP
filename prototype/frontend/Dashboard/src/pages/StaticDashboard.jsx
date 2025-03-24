@@ -4,7 +4,9 @@ import { DashboardContext } from "./DashboardContext";
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap, Circle, Tooltip, CircleMarker, Rectangle } from "react-leaflet";
 import L from "leaflet";
-import "./DynamicSimulation.css";
+import "./StaticDashboard.css";
+import StaticDashboardFlow from './../components/StaticDashboardFlow';
+
 
 
 const API_URL = "http://localhost:8000";
@@ -45,6 +47,14 @@ const StaticDashboard = () => {
   const [startPoint, setStartPoint] = useState([]);
   const [endPoint, setEndPoint] = useState([]);
 
+  const [logs, setLogs] = useState([]);
+
+  const handleLogUpdate = (newLogs) => {
+    // Update the logs state by appending new logs
+    setLogs(prevLogs => [...prevLogs, ...newLogs]);
+    // remove any empty logs
+    setLogs(prevLogs => prevLogs.filter(log => log.trim() !== ""));
+  };
 
   const useQuery = () => new URLSearchParams(useLocation().search);
   const query = useQuery();
@@ -76,8 +86,8 @@ const StaticDashboard = () => {
       const vehicleDataKey = `${selectedVehicle}_${currentPage}`;
       const dpVehicleDataKey = `${selectedVehicle}_${dpCurrentPage}`;
       const riskScoreKey = `${selectedVehicle}_${riskCurrentPage}`;
-      const vehicleRouteKey = `${selectedVehicle}`
-      const dpVehicleRouteKey = `${selectedVehicle}`
+      // const vehicleRouteKey = `${selectedVehicle}`
+      // const dpVehicleRouteKey = `${selectedVehicle}`
       
       // Fetch vehicle data if not in cache
       if (!dataCache.vehicleData[vehicleDataKey]) {
@@ -129,9 +139,17 @@ const StaticDashboard = () => {
   // Get list of all unique vehicle IDs for dropdown
   const fetchVehicleList = async () => {
     try {
-      const response = await fetch(`${API_URL}/vehicle-list`);
+      const functionRoute = `${API_URL}/vehicle-list`
+      const encodedFunctionRoute = encodeURIComponent(functionRoute);
+      const response = await fetch(`${API_URL}/call-function?function_route=${encodedFunctionRoute}`);
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        if (result.log_output && result.log_output.length > 0) {
+          const newLogs = result.log_output.split('\n');
+          handleLogUpdate(newLogs);
+        }
+        console.log("LOG: ", logs);
+        const data = result.function_response;
         setVehicleList(data);
       }
     } catch (error) {
@@ -146,29 +164,36 @@ const StaticDashboard = () => {
       const vehicleRouteKey = `${selectedVehicle}`;
       const isAllVehicles = selectedVehicle === "all";
 
-      let endpoint;
+      let functionRoute;
 
       if (!dataCache.vehicleRoute[vehicleRouteKey]) {
-        endpoint = isAllVehicles
+        functionRoute = isAllVehicles
         ? `${API_URL}/vehicle-data?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
         : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}&get_route=true`;
       } else {
-        endpoint = isAllVehicles
+        functionRoute = isAllVehicles
         ? `${API_URL}/vehicle-data?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
         : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`;
       }
-  
-      const response = await fetch(endpoint);
+      
+      const encodedFunctionRoute = encodeURIComponent(functionRoute);
+      const response = await fetch(`${API_URL}/call-function?function_route=${encodedFunctionRoute}`);
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
       
       const result = await response.json();
+      if (result.log_output && result.log_output.length > 0) {
+        const newLogs = result.log_output.split('\n');
+        handleLogUpdate(newLogs);
+      }
+      console.log("LOG: ", logs);
+      const data = result.function_response;
       
-      if (result.data && Array.isArray(result.data)) {
+      if (data.data && Array.isArray(data.data)) {
         // Update state
-        setVehicles(result.data);
-        setTotalPages(result.pagination.total_pages);
+        setVehicles(data.data);
+        setTotalPages(data.pagination.total_pages);
         
         // Update cache
         const cacheKey = `${selectedVehicle}_${currentPage}`;
@@ -177,8 +202,8 @@ const StaticDashboard = () => {
           vehicleData: {
             ...prevCache.vehicleData,
             [cacheKey]: {
-              data: result.data,
-              totalPages: result.pagination.total_pages
+              data: data.data,
+              totalPages: data.pagination.total_pages
             }
           }
         }));
@@ -186,8 +211,8 @@ const StaticDashboard = () => {
         setError(`No data found for ${selectedVehicle === "all" ? "any vehicles" : `Vehicle ${selectedVehicle}`}.`);
         setVehicles([]);
       }
-      if (!dataCache.vehicleRoute[vehicleRouteKey] && result.route && result.route.length > 0) {
-        const route = result.route
+      if (!dataCache.vehicleRoute[vehicleRouteKey] && data.route && data.route.length > 0) {
+        const route = data.route
           .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
           .map(point => ({
             lat: Number(point.Latitude),
@@ -229,27 +254,35 @@ const StaticDashboard = () => {
       const dpVehicleRouteKey = `${selectedVehicle}`
       const isAllVehicles = selectedVehicle === "all"
 
-      let endpoint;
+      let functionRoute;
       if (!dataCache.dpVehicleRoute[dpVehicleRouteKey]) {
-        endpoint = isAllVehicles
+        functionRoute = isAllVehicles
         ? `${API_URL}/vehicle-data?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
         : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}&get_route=true`;
       } else {
-        endpoint = isAllVehicles
+        functionRoute = isAllVehicles
         ? `${API_URL}/vehicle-data?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
         : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`;
       }
-      const response = await fetch(endpoint);
+
+      const encodedFunctionRoute = encodeURIComponent(functionRoute);
+      const response = await fetch(`${API_URL}/call-function?function_route=${encodedFunctionRoute}`);
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
       
       const result = await response.json();
+      if (result.log_output && result.log_output.length > 0) {
+        const newLogs = result.log_output.split('\n');
+        handleLogUpdate(newLogs);
+      }
+      console.log("LOG: ", logs);
+      const data = result.function_response;
       
-      if (result.data && Array.isArray(result.data)) {
+      if (data.data && Array.isArray(data.data)) {
         // Update state
-        setDpVehicles(result.data);
-        setDpTotalPages(result.pagination.total_pages);
+        setDpVehicles(data.data);
+        setDpTotalPages(data.pagination.total_pages);
         
         // Update cache
         const cacheKey = `${selectedVehicle}_${dpCurrentPage}`;
@@ -258,16 +291,16 @@ const StaticDashboard = () => {
           dpVehicleData: {
             ...prevCache.dpVehicleData,
             [cacheKey]: {
-              data: result.data,
-              totalPages: result.pagination.total_pages
+              data: data.data,
+              totalPages: data.pagination.total_pages
             }
           }
         }));
       } else {
         setDpVehicles([]);
       }
-      if (!dataCache.dpVehicleRoute[dpVehicleRouteKey] && result.route && result.route.length > 0) {
-        const route = result.route
+      if (!dataCache.dpVehicleRoute[dpVehicleRouteKey] && data.route && data.route.length > 0) {
+        const route = data.route
           .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
           .map(point => ({
             lat: Number(point.Latitude),
@@ -408,20 +441,29 @@ const StaticDashboard = () => {
     setIsRiskLoading(true);
     try {
       // Use the new combined endpoint with data_file parameter
-      const endpoint = selectedVehicle === "all"
+      const functionRoute = selectedVehicle === "all"
         ? `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv`
         : `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv&vehicle_id=${selectedVehicle}`;
       
-      const response = await fetch(endpoint);
+      const encodedFunctionRoute = encodeURIComponent(functionRoute);
+      const response = await fetch(
+        `http://localhost:8000/call-function?function_route=${encodedFunctionRoute}`
+      );
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
       
       const result = await response.json();
+      if (result.log_output && result.log_output.length > 0) {
+        const newLogs = result.log_output.split('\n');
+        handleLogUpdate(newLogs);
+      }
+      console.log("LOG: ", logs);
+      const data = result.function_response;
       
       // Extract original and DP risk scores
-      const originalData = result.data.original || [];
-      const dpData = result.data.dp || [];
+      const originalData = data.data.original || [];
+      const dpData = data.data.dp || [];
       
       // Filter by vehicle ID if needed
       const filteredOriginalData = selectedVehicle === "all" 
@@ -572,7 +614,7 @@ const StaticDashboard = () => {
   
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="dashboard-container">
       <h1 className="text-3xl font-bold text-center mb-6">Vehicle Data Dashboard</h1>
 
       {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
@@ -916,6 +958,32 @@ const StaticDashboard = () => {
                 {isDpLoading ? "Loading..." : "No private vehicle data available"}
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* Static Dashboard Flow Chart and Logs */}
+      {view === "map" && (
+        <div className="flow-log-container">
+          <div className="flow-chart-container">
+            <div className="flow-chart">
+              <label>Static Dashboard Flow</label>
+              <StaticDashboardFlow />
+            </div>
+          </div>
+          <div className="log-container">
+            <div className="log-list">
+              {/* Display the logs */}
+              {logs.map((log, index) => {
+                // Check if the log contains 'ERROR'
+                const logClass = log.includes("ERROR") ? "error" : "success"; // Default to 'success' if not 'ERROR'
+
+                return (
+                  <div key={index} className={`log ${logClass}`}>
+                    {log}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
