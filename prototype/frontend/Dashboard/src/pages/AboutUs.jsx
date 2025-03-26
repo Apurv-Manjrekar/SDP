@@ -6,6 +6,7 @@ import IshanaMokashiImage from "../assets/TeamPhotos/IshanaMokashi.png";
 import PeiqiLiImage from "../assets/TeamPhotos/PeiqiLi.jpg";
 import AminSheikhImage from "../assets/TeamPhotos/AminSheikh.png";
 import AmirHerzbergImage from "../assets/TeamPhotos/AmirHerzberg.jpg";
+import MikeKnasImage from "../assets/TeamPhotos/MikeKnas.jpg";
 
 const AboutUs = () => {
     return (
@@ -109,6 +110,9 @@ const AboutUs = () => {
             />
             <h2 className="text-xl font-semibold text-gray-800">Professor Herzberg (Faculty Advisor)</h2>
             <p className="text-gray-600 mt-3">
+              Comcast Professor for Cybersecurity Innovation at UConn's School of Computing.
+              Expert in internet security, applied cryptography, and privacy with a Ph.D. from Technion (Israel).
+              Former researcher at IBM Research and professor at Bar Ilan University.
               Provides academic guidance and ensures the project meets educational objectives.
             </p>
           </div>
@@ -116,13 +120,14 @@ const AboutUs = () => {
           {/* Mike Knas */}
           <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
             <img
-              src={AminSheikhImage}
+              src={MikeKnasImage}
               alt="Mike Knas"
               className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
             />
             <h2 className="text-xl font-semibold text-gray-800">Mike Knas (Industry Mentor)</h2>
             <p className="text-gray-600 mt-3">
-              Offers practical insights and helps bridge academic concepts with real-world applications.
+              Assistant Vice President of Emerging Technology & Innovation at The Hartford.
+              Brings expertise in emerging technologies, design thinking, and patented solutions to bridge academic research with real-world applications.
             </p>
           </div>
           </div>
