@@ -21,12 +21,6 @@ const StaticDashboard = () => {
     dataCache, setDataCache
   } = React.useContext(DashboardContext);
 
-  // const [vehicles, setVehicles] = useState([]);
-  // const [dpVehicles, setDpVehicles] = useState([]);
-  // const [vehicleList, setVehicleList] = useState([]);
-  // const [riskScores, setRiskScores] = useState([]);
-  // const [dpRiskScores, setDpRiskScores] = useState([]);
-
   const [selectedVehicle, setSelectedVehicle] = useState("all");
   const [selectedVehicleType, setSelectedVehicleType] = useState("all");
   const [vehicleTypes, setVehicleTypes] = useState(["all", "car",  "truck", "motorcycle"]);
@@ -67,19 +61,61 @@ const StaticDashboard = () => {
     [41.888833, -72.553847], // NE corner
   ];
   
-  // Cache to store previously fetched data
-  // const [dataCache, setDataCache] = useState({
-  //   vehicleData: {},     // Structure: { vehicleId_page: data }
-  //   dpVehicleData: {},   // Structure: { vehicleId_page: data }
-  //   riskScores: {},      // Structure: { vehicleId_page: data }
-  // });
-  
   const perPage = 50;
 
-  // Fetch vehicle list only once on component mount
+  const vehicleMap = {
+    "car": "veh",
+    "truck": "truck",
+    "motorcycle": "motorcycle",
+  };
+
+  const debounce = (func, delay) => {
+    let timeoutId;
+    return (...args) => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = setTimeout(() => {
+        func(...args);
+      }, delay);
+    };
+  };
+
+  // Get list of all unique vehicle IDs for dropdown
+  const fetchVehicleList = useCallback(async () => {
+    try {
+      const vehicleType = vehicleMap[selectedVehicleType];
+      const functionRoute = selectedVehicleType === "all"
+      ? `${API_URL}/vehicle-list`
+      : `${API_URL}/vehicle-list?vehicle_type=${vehicleType}`
+      const encodedFunctionRoute = encodeURIComponent(functionRoute);
+      const response = await fetch(`${API_URL}/call-function?function_route=${encodedFunctionRoute}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.log_output && result.log_output.length > 0) {
+          const newLogs = result.log_output.split('\n');
+          handleLogUpdate(newLogs);
+        }
+        console.log("LOG: ", logs);
+        const data = result.function_response;
+        setVehicleList(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch vehicle list:", error);
+      setError("Failed to fetch vehicle list. Please refresh the page.");
+    }
+  }, [selectedVehicleType]);
+
   useEffect(() => {
-    fetchVehicleList();
-  }, []);
+    const debouncedFetchVehicleList = debounce(fetchVehicleList, 300);
+    debouncedFetchVehicleList();
+
+    // Cleanup function to cancel any pending timeout
+    return () => {
+      debouncedFetchVehicleList.cancel && debouncedFetchVehicleList.cancel();
+    };
+  }, [fetchVehicleList]);
+
 
   // Memoized data fetching function to prevent unnecessary re-renders
   const fetchData = useCallback(async () => {
@@ -117,48 +153,20 @@ const StaticDashboard = () => {
         setRiskTotalPages(cachedData.totalPages);
       }
 
-      // if (!dataCache.vehicleRoute[vehicleRouteKey]) {
-      //   await fetchVehicleRoute();
-      // } else {
-      //   setVehicleRoute(dataCache.vehicleRoute[vehicleRouteKey].route)
-      // }
-      // if (!dataCache.dpVehicleRoute[dpVehicleRouteKey]) {
-      //   await fetchDpVehicleRoute();
-      // } else {
-      //   setDpVehicleRoute(dataCache.dpVehicleRoute[dpVehicleRouteKey].route)
-      // }
-      
     } catch (error) {
       setError(`Failed to fetch data: ${error.message}`);
     }
-  }, [selectedVehicle, selectedVehicleType, currentPage, dpCurrentPage, riskCurrentPage, dataCache]);
+  }, [selectedVehicle, selectedVehicleType, currentPage, dpCurrentPage, riskCurrentPage]);
 
   // Trigger data fetching when vehicle or page changes
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Get list of all unique vehicle IDs for dropdown
-  const fetchVehicleList = async () => {
-    try {
-      const functionRoute = `${API_URL}/vehicle-list`
-      const encodedFunctionRoute = encodeURIComponent(functionRoute);
-      const response = await fetch(`${API_URL}/call-function?function_route=${encodedFunctionRoute}`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.log_output && result.log_output.length > 0) {
-          const newLogs = result.log_output.split('\n');
-          handleLogUpdate(newLogs);
-        }
-        console.log("LOG: ", logs);
-        const data = result.function_response;
-        setVehicleList(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch vehicle list:", error);
-      setError("Failed to fetch vehicle list. Please refresh the page.");
-    }
-  };
+
+  // useEffect(() => {
+  //     fetchVehicleList();
+  //   }, [selectedVehicleType]);
 
   const fetchVehicleData = async () => {
     setIsLoading(true);
@@ -167,15 +175,19 @@ const StaticDashboard = () => {
       const isAllVehicles = selectedVehicle === "all";
   
       let functionRoute;
-
+      const vehicleType = vehicleMap[selectedVehicleType];
       if (!dataCache.vehicleRoute[vehicleRouteKey]) {
-        functionRoute = isAllVehicles
-          ? `${API_URL}/vehicle-data?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
-          : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}&get_route=true`;
+        isAllVehicles
+          ? functionRoute = selectedVehicleType === "all"
+            ? `${API_URL}/vehicle-data?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
+            : `${API_URL}/vehicle-data-by-type/${vehicleType}?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
+          : functionRoute = `${API_URL}/vehicle-data-by-id/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}&get_route=true`
       } else {
-        functionRoute = isAllVehicles
-          ? `${API_URL}/vehicle-data?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
-          : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`;
+        isAllVehicles
+          ? functionRoute = selectedVehicleType === "all"
+            ? `${API_URL}/vehicle-data?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
+            : `${API_URL}/vehicle-data-by-type/${vehicleType}?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
+          : functionRoute = `${API_URL}/vehicle-data-by-id/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv&page=${currentPage}&per_page=${perPage}`
       }
 
       console.log("Fetching data from:", functionRoute);
@@ -201,48 +213,8 @@ const StaticDashboard = () => {
         console.log("length:", data.data.length);
         console.log("ID:", data.data.slice(0, 5).map(v => v.Vehicle_ID));
 
-        let filteredData = data.data;
-      
-        if (selectedVehicleType !== "all") {
-          console.log("type:", selectedVehicleType);
-
-          filteredData = data.data.filter(vehicle => {
-            if (!vehicle.Vehicle_ID) {
-              console.log("no data");
-              return false;
-            }
-            
-            const vehicleId = vehicle.Vehicle_ID.toString();
-            console.log("check ID:", vehicleId);
-            
-            let matches = false;
-            
-            if (selectedVehicleType === "car" && (vehicleId.startsWith("veh") || vehicleId.startsWith("car"))) {
-              matches = true;
-            } else if (selectedVehicleType === "motorcycle" && vehicleId.startsWith("motorcycle")) {
-              matches = true;
-            } else if (selectedVehicleType === "truck" && vehicleId.startsWith("truck")) {
-              matches = true;
-            }
-            
-            console.log(`ID ${vehicleId} type ${selectedVehicleType} match: ${matches}`);
-            return matches;
-          });
-          
-          console.log("length:", filteredData.length);
-          if (filteredData.length > 0) {
-            console.log("id:", filteredData.slice(0, 5).map(v => v.Vehicle_ID));
-          } else {
-            console.log("error");
-          }
-        }
-
-        // Update state
-        setVehicles(filteredData);
-
-        const totalFilteredPages = Math.max(1, Math.ceil(filteredData.length / perPage));
-        setTotalPages(totalFilteredPages);
-        console.log("total page:", totalFilteredPages);
+        setVehicles(data.data)
+        setTotalPages(data.pagination.total_pages)
         
         // Update cache
         const cacheKey = `${selectedVehicle}_${selectedVehicleType}_${currentPage}`;
@@ -251,8 +223,8 @@ const StaticDashboard = () => {
           vehicleData: {
             ...prevCache.vehicleData,
             [cacheKey]: {
-              data: filteredData,
-              totalPages: totalFilteredPages
+              data: data.data,
+              totalPages: data.pagination.total_pages
             }
           }
         }));
@@ -308,14 +280,19 @@ const StaticDashboard = () => {
       const isAllVehicles = selectedVehicle === "all";
   
       let functionRoute;
+      const vehicleType = vehicleMap[selectedVehicleType];
       if (!dataCache.dpVehicleRoute[dpVehicleRouteKey]) {
-        functionRoute = isAllVehicles
-          ? `${API_URL}/vehicle-data?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
-          : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}&get_route=true`;
+        isAllVehicles
+          ? functionRoute = selectedVehicleType === "all"
+            ? `${API_URL}/vehicle-data?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
+            : `${API_URL}/vehicle-data-by-type/${vehicleType}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
+          : functionRoute = `${API_URL}/vehicle-data-by-id/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}&get_route=true`
       } else {
-        functionRoute = isAllVehicles
+        isAllVehicles
+          ? functionRoute = selectedVehicleType === "all"
           ? `${API_URL}/vehicle-data?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
-          : `${API_URL}/vehicle-data/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`;
+          : `${API_URL}/vehicle-data-by-type/${vehicleType}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
+        : functionRoute = `${API_URL}/vehicle-data-by-id/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv&page=${dpCurrentPage}&per_page=${perPage}`
       }
 
       const encodedFunctionRoute = encodeURIComponent(functionRoute);
@@ -336,39 +313,17 @@ const StaticDashboard = () => {
       
       if (data.data && Array.isArray(data.data)) {
 
-        let filteredData = data.data;
-      
-        if (selectedVehicleType !== "all") {
-          filteredData = data.data.filter(vehicle => {
-            const vehicleId = vehicle.Vehicle_ID.toString();
-            if (selectedVehicleType === "car" && vehicleId.startsWith("veh")) {
-              return true;
-            }
-            if (selectedVehicleType === "motorcycle" && vehicleId.startsWith("motorcycle")) {
-              return true;
-            }
-            if (selectedVehicleType === "truck" && vehicleId.startsWith("truck")) {
-              return true;
-            }
-            return false;
-          });
-        }
+        setDpVehicles(data.data)
+        setDpTotalPages(data.pagination.total_pages)
 
-        // Update state
-        setDpVehicles(filteredData);
-
-        const totalFilteredPages = Math.max(1, Math.ceil(filteredData.length / perPage));
-        setDpTotalPages(totalFilteredPages);
-        
-        // Update cache
         const cacheKey = `${selectedVehicle}_${selectedVehicleType}_${dpCurrentPage}`;
         setDataCache(prevCache => ({
           ...prevCache,
           dpVehicleData: {
             ...prevCache.dpVehicleData,
             [cacheKey]: {
-              data: filteredData,
-              totalPages: totalFilteredPages
+              data: data.data,
+              totalPages: data.pagination.total_pages
             }
           }
         }));
@@ -407,120 +362,18 @@ const StaticDashboard = () => {
     }
   };
 
-  // const fetchVehicleRoute = async () => {
-  //   if(!selectedVehicle || selectedVehicle === "all") return;
-  //   setIsLoading(true)
-  //   try {
-  //     const response = await fetch(
-  //       `${API_URL}/vehicle-route/${selectedVehicle}?dynamic=false&data_file=vehicle_data.csv`
-  //     );
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       if (data.data && data.data.length > 0) {
-  //         const route = data.data
-  //           .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
-  //           .map(point => ({
-  //             lat: Number(point.Latitude),
-  //             lng: Number(point.Longitude),
-  //             speed: point.Speed ?? null,
-  //             acceleration: point.Acceleration ?? null,
-  //             timeGap: point["Time_Gap"] ?? null
-  //           }));
-  //         setVehicleRoute(route);
-  //         const cacheKey = `${selectedVehicle}`
-  //         setDataCache(prevCache => ({
-  //           ...prevCache,
-  //           vehicleRoute: {
-  //             ...prevCache.vehicleRoute,
-  //             [cacheKey]: {
-  //               route: route,
-  //             }
-  //           }
-  //         }));
-  //         console.log("Vehicle route received:", data.data);
-  //         console.log("Filtered route data:", route);
-  //         if (route.length > 0) {
-  //           setStartPoint([route[0].lat, route[0].lng]);
-  //           setEndPoint([route[route.length - 1].lat, route[route.length - 1].lng]);
-  //         }
-  //       } else {
-  //         setVehicleRoute([]);
-  //         setStartPoint("");
-  //         setEndPoint("");
-  //       }
-  //     } else {
-  //       const errorData = await response.json();
-  //       console.error("Failed to fetch vehicle route:", errorData.error);
-  //       setVehicleRoute([]);
-  //       setStartPoint("");
-  //       setEndPoint("");
-  //     }
-  //   } catch (err) {
-  //     console.error("Error fetching vehicle route:", err);
-  //     setVehicleRoute([]);
-  //     setStartPoint("");
-  //     setEndPoint("");
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
-  // const fetchDpVehicleRoute = async () => {
-  //   if(!selectedVehicle || selectedVehicle === "all") return;
-  //   setIsLoading(true)
-  //   try {
-  //     const response = await fetch(
-  //       `${API_URL}/vehicle-route/${selectedVehicle}?dynamic=false&data_file=dp_vehicle_data.csv`
-  //     );
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       if (data.data && data.data.length > 0) {
-  //         const route = data.data
-  //           .filter(point => point.Latitude !== undefined && point.Longitude !== undefined)
-  //           .map(point => ({
-  //             lat: Number(point.Latitude),
-  //             lng: Number(point.Longitude),
-  //             speed: point.Speed ?? null,
-  //             acceleration: point.Acceleration ?? null,
-  //             timeGap: point["Time_Gap"] ?? null
-  //           }));
-  //         setDpVehicleRoute(route);
-  //         const cacheKey = `${selectedVehicle}`
-  //         setDataCache(prevCache => ({
-  //           ...prevCache,
-  //           dpVehicleRoute: {
-  //             ...prevCache.dpVehicleRoute,
-  //             [cacheKey]: {
-  //               route: route,
-  //             }
-  //           }
-  //         }));
-  //         console.log("Dp Vehicle route received:", data.data);
-  //         console.log("Dp Filtered route data:", route);
-
-  //       } else {
-  //         setDpVehicleRoute([]);
-  //       }
-  //     } else {
-  //       const errorData = await response.json();
-  //       console.error("Failed to fetch Dp vehicle route:", errorData.error);
-  //       setDpVehicleRoute([]);
-  //     }
-  //   } catch (err) {
-  //     console.error("Error fetching vehicle route:", err);
-  //     setDpVehicleRoute([]);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
   const fetchRiskScores = async () => {
     setIsRiskLoading(true);
     try {
       // Use the new combined endpoint with data_file parameter
-      const functionRoute = selectedVehicle === "all"
-      ? `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv`
-      : `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv&vehicle_id=${selectedVehicle}`;
+      let functionRoute;
+      const vehicleType = vehicleMap[selectedVehicleType];
+      selectedVehicle === "all"
+      ? functionRoute = selectedVehicleType === "all"
+        ? `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv`
+        : `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv&vehicle_type=${vehicleType}`
+      : functionRoute = `${API_URL}/get-risk-score?dynamic=false&data_file=vehicle_data.csv&vehicle_id=${selectedVehicle}`
+      
       
       const encodedFunctionRoute = encodeURIComponent(functionRoute);
       const response = await fetch(
@@ -551,38 +404,6 @@ const StaticDashboard = () => {
       let filteredDpData = selectedVehicle === "all"
         ? dpData
         : dpData.filter(item => String(item.Vehicle_ID) === String(selectedVehicle));
-
-        if (selectedVehicleType !== "all") {
-          filteredOriginalData = filteredOriginalData.filter(item => {
-            const vehicleId = item.Vehicle_ID.toString();
-            if (selectedVehicleType === "car" && vehicleId.startsWith("veh")) {
-              return true;
-            }
-            if (selectedVehicleType === "motorcycle" && vehicleId.startsWith("motorcycle")) {
-              return true;
-            }
-            if (selectedVehicleType === "truck" && vehicleId.startsWith("truck")) {
-              return true;
-            }
-            return false;
-          });
-
-          filteredDpData = filteredDpData.filter(item => {
-            const vehicleId = item.Vehicle_ID.toString();
-            if (selectedVehicleType === "car" && vehicleId.startsWith("veh")) {
-              return true;
-            }
-            if (selectedVehicleType === "motorcycle" && vehicleId.startsWith("motorcycle")) {
-              return true;
-            }
-            if (selectedVehicleType === "truck" && vehicleId.startsWith("truck")) {
-              return true;
-            }
-            return false;
-          });
-        }
-
-      
       
       // Calculate total pages for original risk scores (which we'll paginate)
       const totalRiskPages = Math.ceil(filteredOriginalData.length / perPage);
@@ -631,6 +452,7 @@ const StaticDashboard = () => {
   const handleVehicleTypeChange = (e) => {
     const newValue = e.target.value;
     setSelectedVehicleType(newValue);
+    setSelectedVehicle("all");
     setCurrentPage(1); // Reset to page 1 when changing vehicles
     setDpCurrentPage(1);
     setRiskCurrentPage(1);
