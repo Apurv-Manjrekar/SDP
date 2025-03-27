@@ -5,155 +5,158 @@ import VanshikaGuptaImage from "../assets/TeamPhotos/VanshikaGupta.png";
 import IshanaMokashiImage from "../assets/TeamPhotos/IshanaMokashi.png";
 import PeiqiLiImage from "../assets/TeamPhotos/PeiqiLi.jpg";
 import AminSheikhImage from "../assets/TeamPhotos/AminSheikh.png";
-import { Link } from "react-router-dom";
+import AmirHerzbergImage from "../assets/TeamPhotos/AmirHerzberg.jpg";
+import MikeKnasImage from "../assets/TeamPhotos/MikeKnas.jpg";
+import "./AboutUs.css"
 
 const AboutUs = () => {
-    return (
-      <div style={{ 
-        padding: '20px', 
-        maxWidth: '800px', 
-        margin: '0 auto', 
-        textAlign: 'center' 
-      }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '20px' }}>About Us</h1>
-        <p style={{ fontSize: '1.2rem', lineHeight: '1.6', marginBottom: '15px' }}>
-        Welcome to our website! We are a team of passionate seniors styding computer science at the University of Connecticut!
-        </p>
+  return (
+    <div className="about-us-container">
+      <h1 className="about-us-title">About Our Team</h1>
+      <p className="about-us-description">
+        We are a group of Computer Science seniors at the University of Connecticut 
+        passionate about Differential Privacy!
+      </p>
 
-        {/* Team Member 1 */}
-        <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-          <img
-            src={ApurvManjrekarImage} // Placeholder image path
-            alt="Team Member 1"
-            className="w-32 h-32 rounded-full mx-auto mb-4"
-          />
-          <h2 className="text-2xl font-semibold">Apruv Manjrekar</h2>
-          <p className="text-gray-700 mt-2">
-            Team Lead/Developer
-          </p>
-          <p className="text-gray-600 mt-2">
-            <strong>Contribution:</strong> [Description of their contribution.]
+      <div className="team-grid">
+        {/* Apurv Manjrekar */}
+        <div className="team-card">
+          <div className="image-container">
+            <img
+              src={ApurvManjrekarImage}
+              alt="Apurv Manjrekar"
+              className="team-image"
+            />
+          </div>
+          <h2 className="member-name">Apurv Manjrekar</h2>
+          <p className="member-role">Team Lead & Developer</p>
+          <p className="member-description">
+            Oversees project direction and coordinates team efforts while contributing to core development.
           </p>
         </div>
 
-         {/* Team Member 2 */}
-        <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-          <img
-            src={SaiAkavaramuImage} // Placeholder image path 
-            alt="Team Member 2"
-            className="w-20 h-20 rounded-full mx-auto mb-4"
-          />
-          <h2 className="text-2xl font-semibold">Sai Akavaramu</h2>
-          <p className="text-gray-700 mt-2">
-            Developer/Co-Lead
-          </p>
-          <p className="text-gray-600 mt-2">
-            <strong>Contribution:</strong> [Description of their contribution.]
-          </p>
-        </div>
-
-        {/* Team Member 3 */}
-        <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-          <img
-            src={VanshikaGuptaImage} // Placeholder image path
-            alt="Team Member 1"
-            className="w-32 h-32 rounded-full mx-auto mb-4"
-          />
-          <h2 className="text-2xl font-semibold">Vanshika Gupta</h2>
-          <p className="text-gray-700 mt-2">
-            Developer/Researcher
-          </p>
-          <p className="text-gray-600 mt-2">
-            <strong>Contribution:</strong> [Description of their contribution.]
+        {/* Sai Akavaramu */}
+        <div className="team-card">
+          <div className="image-container">
+            <img
+              src={SaiAkavaramuImage}
+              alt="Sai Akavaramu"
+              className="team-image"
+            />
+          </div>
+          <h2 className="member-name">Sai Akavaramu</h2>
+          <p className="member-role">Developer & Co-Lead</p>
+          <p className="member-description">
+            Leads data processing implementation and ensures code quality across the project.
           </p>
         </div>
 
-        {/* Team Member 4 */}
-        <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-          <img
-            src={IshanaMokashiImage} // Placeholder image path
-            alt="Team Member 1"
-            className="w-32 h-32 rounded-full mx-auto mb-4"
-          />
-          <h2 className="text-2xl font-semibold">Ishana Mokashi</h2>
-          <p className="text-gray-700 mt-2">
-            Developer/Researcher
-          </p>
-          <p className="text-gray-600 mt-2">
-            <strong>Contribution:</strong> [Description of their contribution.]
-          </p>
-        </div>
-
-        {/* Team Member 5 */}
-        <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-          <img
-            src={PeiqiLiImage} // Placeholder image path
-            alt="Team Member 1"
-            className="w-32 h-32 rounded-full mx-auto mb-4"
-          />
-          <h2 className="text-2xl font-semibold">Peiqi Li</h2>
-          <p className="text-gray-700 mt-2">
-            Developer/Researcher
-          </p>
-          <p className="text-gray-600 mt-2">
-            <strong>Contribution:</strong> [Description of their contribution.]
+        {/* Vanshika Gupta */}
+        <div className="team-card">
+          <div className="image-container">
+            <img
+              src={VanshikaGuptaImage}
+              alt="Vanshika Gupta"
+              className="team-image"
+            />
+          </div>
+          <h2 className="member-name">Vanshika Gupta</h2>
+          <p className="member-role">Developer & Researcher</p>
+          <p className="member-description">
+            Implements key frontend features and conducts research to inform our technical approach.
           </p>
         </div>
 
-        {/* Team Member 6 */}
-        <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-          <img
-            src={AminSheikhImage} // Placeholder image path
-            alt="Team Member 1"
-            className="w-32 h-32 rounded-full mx-auto mb-4"
-          />
-          <h2 className="text-2xl font-semibold">Amin Sheikh</h2>
-          <p className="text-gray-700 mt-2">
-            Developer/Data Engineer/Project Manager
-          </p>
-          <p className="text-gray-600 mt-2">
-            <strong>Contribution:</strong> [Description of their contribution.]
-          </p>
-        </div>
-
-        {/* Professor */}
-        <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-          <img
-            src="/images/professor.jpg" // Placeholder image path
-            alt="Professor"
-            className="w-32 h-32 rounded-full mx-auto mb-4"
-          />
-          <h2 className="text-2xl font-semibold">Professor Herzberg</h2>
-          <p className="text-gray-700 mt-2">
-            [Brief bio about the professor and their role in the project.]
-          </p>
-          <p className="text-gray-600 mt-2">
-            <strong>Contribution:</strong> [Description of their contribution.]
+        {/* Ishana Mokashi */}
+        <div className="team-card">
+          <div className="image-container">
+            <img
+              src={IshanaMokashiImage}
+              alt="Ishana Mokashi"
+              className="team-image"
+            />
+          </div>
+          <h2 className="member-name">Ishana Mokashi</h2>
+          <p className="member-role">Developer & Researcher</p>
+          <p className="member-description">
+            Focuses on algorithm development and performance optimization.
           </p>
         </div>
 
-        {/* Mike */}
-        <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-          <img
-            src="/images/mike.jpg" // Placeholder image path
-            alt="Mike"
-            className="w-32 h-32 rounded-full mx-auto mb-4"
-          />
-          <h2 className="text-2xl font-semibold">Mike Knas</h2>
-          <p className="text-gray-700 mt-2">
-            [Brief bio about Mike and their role in the project.]
-          </p>
-          <p className="text-gray-600 mt-2">
-            <strong>Contribution:</strong> [Description of their contribution.]
+        {/* Peiqi Li */}
+        <div className="team-card">
+          <div className="image-container">
+            <img
+              src={PeiqiLiImage}
+              alt="Peiqi Li"
+              className="team-image"
+            />
+          </div>
+          <h2 className="member-name">Peiqi Li</h2>
+          <p className="member-role">Developer & Researcher</p>
+          <p className="member-description">
+            Specializes in user interface implementation.
           </p>
         </div>
 
-
-        
+        {/* Amin Sheikh */}
+        <div className="team-card">
+          <div className="image-container">
+            <img
+              src={AminSheikhImage}
+              alt="Amin Sheikh"
+              className="team-image"
+            />
+          </div>
+          <h2 className="member-name">Amin Sheikh</h2>
+          <p className="member-role">Data Engineer & Project Manager</p>
+          <p className="member-description">
+            Manages project timelines and implemented risk score analysis.
+          </p>
+        </div>
       </div>
 
+      <h1 className="advisors-title">Our Advisors</h1>
       
-    );
+      <div className="advisor-cards-container">
+        {/* Amir Herzberg */}
+        <div className="advisor-card">
+          <div className="image-container">
+            <img
+              src={AmirHerzbergImage}
+              alt="Professor Herzberg"
+              className="team-image"
+            />
+          </div>
+          <h2 className="member-name">Professor Herzberg</h2>
+          <p className="advisor-role">Faculty Advisor</p>
+          <p className="advisor-description">
+            Comcast Professor for Cybersecurity Innovation at UConn's School of Computing.
+            Expert in internet security, applied cryptography, and privacy with a Ph.D. from Technion (Israel).
+            Former researcher at IBM Research and professor at Bar Ilan University.
+            Provides academic guidance and ensures the project meets educational objectives.
+          </p>
+        </div>
+
+        {/* Mike Knas */}
+        <div className="advisor-card">
+          <div className="image-container">
+            <img
+              src={MikeKnasImage}
+              alt="Mike Knas"
+              className="team-image"
+            />
+          </div>
+          <h2 className="member-name">Mike Knas</h2>
+          <p className="advisor-role">Industry Mentor</p>
+          <p className="advisor-description">
+            Assistant Vice President of Emerging Technology & Innovation at The Hartford.
+            Brings expertise in emerging technologies, design thinking, and patented solutions to bridge academic research with real-world applications.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default AboutUs;
