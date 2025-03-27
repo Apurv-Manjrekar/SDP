@@ -19,17 +19,13 @@ const AboutUs = () => {
       </p>
 
       <div className="team-grid">
-        {/* Team Member 1 */}
+        {/* Apurv Manjrekar */}
         <div className="team-card">
           <div className="image-container">
             <img
               src={ApurvManjrekarImage}
               alt="Apurv Manjrekar"
               className="team-image"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/160";
-              }}
             />
           </div>
           <h2 className="member-name">Apurv Manjrekar</h2>
@@ -39,17 +35,13 @@ const AboutUs = () => {
           </p>
         </div>
 
-        {/* Team Member 2 */}
+        {/* Sai Akavaramu */}
         <div className="team-card">
           <div className="image-container">
             <img
               src={SaiAkavaramuImage}
               alt="Sai Akavaramu"
               className="team-image"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/160";
-              }}
             />
           </div>
           <h2 className="member-name">Sai Akavaramu</h2>
@@ -59,17 +51,13 @@ const AboutUs = () => {
           </p>
         </div>
 
-        {/* Team Member 3 */}
+        {/* Vanshika Gupta */}
         <div className="team-card">
           <div className="image-container">
             <img
               src={VanshikaGuptaImage}
               alt="Vanshika Gupta"
               className="team-image"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/160";
-              }}
             />
           </div>
           <h2 className="member-name">Vanshika Gupta</h2>
@@ -79,17 +67,13 @@ const AboutUs = () => {
           </p>
         </div>
 
-        {/* Team Member 4 */}
+        {/* Ishana Mokashi */}
         <div className="team-card">
           <div className="image-container">
             <img
               src={IshanaMokashiImage}
               alt="Ishana Mokashi"
               className="team-image"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/160";
-              }}
             />
           </div>
           <h2 className="member-name">Ishana Mokashi</h2>
@@ -99,17 +83,13 @@ const AboutUs = () => {
           </p>
         </div>
 
-        {/* Team Member 5 */}
+        {/* Peiqi Li */}
         <div className="team-card">
           <div className="image-container">
             <img
               src={PeiqiLiImage}
               alt="Peiqi Li"
               className="team-image"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/160";
-              }}
             />
           </div>
           <h2 className="member-name">Peiqi Li</h2>
@@ -119,17 +99,13 @@ const AboutUs = () => {
           </p>
         </div>
 
-        {/* Team Member 6 */}
+        {/* Amin Sheikh */}
         <div className="team-card">
           <div className="image-container">
             <img
               src={AminSheikhImage}
               alt="Amin Sheikh"
               className="team-image"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/160";
-              }}
             />
           </div>
           <h2 className="member-name">Amin Sheikh</h2>
@@ -142,23 +118,19 @@ const AboutUs = () => {
 
       <h1 className="advisors-title">Our Advisors</h1>
       
-      <div className="advisors-grid">
-        {/* Advisor 1 */}
+      <div className="advisor-cards-container">
+        {/* Amir Herzberg */}
         <div className="advisor-card">
           <div className="image-container">
             <img
               src={AmirHerzbergImage}
               alt="Professor Herzberg"
               className="team-image"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/160";
-              }}
             />
           </div>
           <h2 className="member-name">Professor Herzberg</h2>
-          <p className="member-role">Faculty Advisor</p>
-          <p className="member-description">
+          <p className="advisor-role">Faculty Advisor</p>
+          <p className="advisor-description">
             Comcast Professor for Cybersecurity Innovation at UConn's School of Computing.
             Expert in internet security, applied cryptography, and privacy with a Ph.D. from Technion (Israel).
             Former researcher at IBM Research and professor at Bar Ilan University.
@@ -166,22 +138,18 @@ const AboutUs = () => {
           </p>
         </div>
 
-        {/* Advisor 2 */}
+        {/* Mike Knas */}
         <div className="advisor-card">
           <div className="image-container">
             <img
               src={MikeKnasImage}
               alt="Mike Knas"
               className="team-image"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/160";
-              }}
             />
           </div>
           <h2 className="member-name">Mike Knas</h2>
-          <p className="member-role">Industry Mentor</p>
-          <p className="member-description">
+          <p className="advisor-role">Industry Mentor</p>
+          <p className="advisor-description">
             Assistant Vice President of Emerging Technology & Innovation at The Hartford.
             Brings expertise in emerging technologies, design thinking, and patented solutions to bridge academic research with real-world applications.
           </p>
