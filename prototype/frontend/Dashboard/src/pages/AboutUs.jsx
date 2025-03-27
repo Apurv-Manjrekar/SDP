@@ -6,6 +6,7 @@ import IshanaMokashiImage from "../assets/TeamPhotos/IshanaMokashi.png";
 import PeiqiLiImage from "../assets/TeamPhotos/PeiqiLi.jpg";
 import AminSheikhImage from "../assets/TeamPhotos/AminSheikh.png";
 import AmirHerzbergImage from "../assets/TeamPhotos/AmirHerzberg.jpg";
+import MikeKnasImage from "../assets/TeamPhotos/MikeKnas.jpg";
 
 const AboutUs = () => {
     return (
@@ -24,8 +25,7 @@ const AboutUs = () => {
               alt="Apurv Manjrekar"
               className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
             />
-            <h2 className="text-xl font-semibold text-gray-800">Apurv Manjrekar</h2>
-            <p className="text-blue-600 font-medium mt-1">Team Lead & Developer</p>
+            <h2 className="text-xl font-semibold text-gray-800">Apurv Manjrekar (Team Lead & Developer)</h2>
             <p className="text-gray-600 mt-3">
               Oversees project direction and coordinates team efforts while contributing to core development.
             </p>
@@ -38,10 +38,10 @@ const AboutUs = () => {
               alt="Sai Akavaramu"
               className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
             />
-            <h2 className="text-xl font-semibold text-gray-800">Sai Akavaramu</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Sai Akavaramu (Developer & Co-Lead)</h2>
             <p className="text-blue-600 font-medium mt-1">Developer & Co-Lead</p>
             <p className="text-gray-600 mt-3">
-              Leads technical implementation and ensures code quality across the project.
+              Leads data processing implementation and ensures code quality across the project.
             </p>
           </div>
 
@@ -52,10 +52,9 @@ const AboutUs = () => {
               alt="Vanshika Gupta"
               className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
             />
-            <h2 className="text-xl font-semibold text-gray-800">Vanshika Gupta</h2>
-            <p className="text-blue-600 font-medium mt-1">Developer & Researcher</p>
+            <h2 className="text-xl font-semibold text-gray-800">Vanshika Gupta (Developer & Researcher)</h2>
             <p className="text-gray-600 mt-3">
-              Implements key features and conducts research to inform our technical approach.
+              Implements key frontend features and conducts research to inform our technical approach.
             </p>
           </div>
 
@@ -66,8 +65,7 @@ const AboutUs = () => {
               alt="Ishana Mokashi"
               className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
             />
-            <h2 className="text-xl font-semibold text-gray-800">Ishana Mokashi</h2>
-            <p className="text-blue-600 font-medium mt-1">Developer & Researcher</p>
+            <h2 className="text-xl font-semibold text-gray-800">Ishana Mokashi (Developer & Researcher)</h2>
             <p className="text-gray-600 mt-3">
               Focuses on algorithm development and performance optimization.
             </p>
@@ -80,8 +78,7 @@ const AboutUs = () => {
               alt="Peiqi Li"
               className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
             />
-            <h2 className="text-xl font-semibold text-gray-800">Peiqi Li</h2>
-            <p className="text-blue-600 font-medium mt-1">Developer & Researcher</p>
+            <h2 className="text-xl font-semibold text-gray-800">Peiqi Li (Developer & Researcher)</h2>
             <p className="text-gray-600 mt-3">
               Specializes in user interface implementation.
             </p>
@@ -94,45 +91,46 @@ const AboutUs = () => {
               alt="Amin Sheikh"
               className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
             />
-            <h2 className="text-xl font-semibold text-gray-800">Amin Sheikh</h2>
-            <p className="text-blue-600 font-medium mt-1">Data Engineer & Project Manager</p>
+            <h2 className="text-xl font-semibold text-gray-800">Amin Sheikh (Data Engineer & Project Manager)</h2>
             <p className="text-gray-600 mt-3">
               Manages project timelines and implemented risk score analysis.
             </p>
           </div>
-        </div>
 
-        <div className="mt-16">
-          <h1 className="text-2xl font-bold text-center mb-8 text-gray-800">Our Advisors</h1>
+        
+
+          <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">Our Advisors</h1>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-            {/* Professor */}
-            <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
-              <img
+          {/* Professor */}
+          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
+            <img
               src={AmirHerzbergImage}
               alt="Amir Herzberg"
-              className="w-40 h-40 object-contain rounded-full mx-auto mb-4 border-4 border-blue-100 bg-gray-100"
-              />
-              <h2 className="text-xl font-semibold text-gray-800">Professor Herzberg</h2>
-              <p className="text-blue-600 font-medium mt-1">Faculty Advisor</p>
-              <p className="text-gray-600 mt-3">
-                Provides academic guidance and ensures the project meets educational objectives.
-              </p>
-            </div>
-
-            {/* Mike */}
-            <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
-              <div className="w-40 h-40 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-gray-400">Mike Image</span>
-              </div>
-              <h2 className="text-xl font-semibold text-gray-800">Mike Knas</h2>
-              <p className="text-blue-600 font-medium mt-1">Industry Mentor</p>
-              <p className="text-gray-600 mt-3">
-                Offers practical insights and helps bridge academic concepts with real-world applications.
-              </p>
-            </div>
+              className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
+            />
+            <h2 className="text-xl font-semibold text-gray-800">Professor Herzberg (Faculty Advisor)</h2>
+            <p className="text-gray-600 mt-3">
+              Comcast Professor for Cybersecurity Innovation at UConn's School of Computing.
+              Expert in internet security, applied cryptography, and privacy with a Ph.D. from Technion (Israel).
+              Former researcher at IBM Research and professor at Bar Ilan University.
+              Provides academic guidance and ensures the project meets educational objectives.
+            </p>
           </div>
-        </div>
+
+          {/* Mike Knas */}
+          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
+            <img
+              src={MikeKnasImage}
+              alt="Mike Knas"
+              className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
+            />
+            <h2 className="text-xl font-semibold text-gray-800">Mike Knas (Industry Mentor)</h2>
+            <p className="text-gray-600 mt-3">
+              Assistant Vice President of Emerging Technology & Innovation at The Hartford.
+              Brings expertise in emerging technologies, design thinking, and patented solutions to bridge academic research with real-world applications.
+            </p>
+          </div>
+          </div>
       </div>
     );
 };
