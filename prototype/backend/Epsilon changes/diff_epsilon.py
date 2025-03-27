@@ -76,7 +76,11 @@ if __name__ == "__main__":
 
     # Load dataset
     dataset_path = os.path.abspath(args.dataset)
-    df = pd.read_csv(dataset_path)
+    df = pd.read_csv(dataset_path, low_memory=False)
+    df['Lane_Change'] = df['Lane_Change'].astype('boolean').fillna(False).astype(int)
+    df['Collision'] = df['Collision'].astype('boolean').fillna(False).astype(int)
+
+    #df = pd.read_csv(dataset_path)
 
     # Apply Differential Privacy for each epsilon value
     apply_multiple_epsilons(df, epsilon_values)
