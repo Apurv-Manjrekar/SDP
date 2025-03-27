@@ -7,132 +7,188 @@ import PeiqiLiImage from "../assets/TeamPhotos/PeiqiLi.jpg";
 import AminSheikhImage from "../assets/TeamPhotos/AminSheikh.png";
 import AmirHerzbergImage from "../assets/TeamPhotos/AmirHerzberg.jpg";
 import MikeKnasImage from "../assets/TeamPhotos/MikeKnas.jpg";
+import "./AboutUs.css"
 
 const AboutUs = () => {
-    return (
-      <div className="py-8 px-4 max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">About Our Team</h1>
-        <p className="text-lg text-gray-600 mb-12 text-center leading-relaxed">
-          We are a group of Computer Science seniors at the University of Connecticut 
-          passionate about Differential Privacy!
-        </p>
+  return (
+    <div className="about-us-container">
+      <h1 className="about-us-title">About Our Team</h1>
+      <p className="about-us-description">
+        We are a group of Computer Science seniors at the University of Connecticut 
+        passionate about Differential Privacy!
+      </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Team Member 1 */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
+      <div className="team-grid">
+        {/* Team Member 1 */}
+        <div className="team-card">
+          <div className="image-container">
             <img
               src={ApurvManjrekarImage}
               alt="Apurv Manjrekar"
-              className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
+              className="team-image"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/160";
+              }}
             />
-            <h2 className="text-xl font-semibold text-gray-800">Apurv Manjrekar (Team Lead & Developer)</h2>
-            <p className="text-gray-600 mt-3">
-              Oversees project direction and coordinates team efforts while contributing to core development.
-            </p>
           </div>
+          <h2 className="member-name">Apurv Manjrekar</h2>
+          <p className="member-role">Team Lead & Developer</p>
+          <p className="member-description">
+            Oversees project direction and coordinates team efforts while contributing to core development.
+          </p>
+        </div>
 
-          {/* Team Member 2 */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
+        {/* Team Member 2 */}
+        <div className="team-card">
+          <div className="image-container">
             <img
               src={SaiAkavaramuImage}
               alt="Sai Akavaramu"
-              className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
+              className="team-image"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/160";
+              }}
             />
-            <h2 className="text-xl font-semibold text-gray-800">Sai Akavaramu (Developer & Co-Lead)</h2>
-            <p className="text-blue-600 font-medium mt-1">Developer & Co-Lead</p>
-            <p className="text-gray-600 mt-3">
-              Leads data processing implementation and ensures code quality across the project.
-            </p>
           </div>
+          <h2 className="member-name">Sai Akavaramu</h2>
+          <p className="member-role">Developer & Co-Lead</p>
+          <p className="member-description">
+            Leads data processing implementation and ensures code quality across the project.
+          </p>
+        </div>
 
-          {/* Team Member 3 */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
+        {/* Team Member 3 */}
+        <div className="team-card">
+          <div className="image-container">
             <img
               src={VanshikaGuptaImage}
               alt="Vanshika Gupta"
-              className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
+              className="team-image"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/160";
+              }}
             />
-            <h2 className="text-xl font-semibold text-gray-800">Vanshika Gupta (Developer & Researcher)</h2>
-            <p className="text-gray-600 mt-3">
-              Implements key frontend features and conducts research to inform our technical approach.
-            </p>
           </div>
+          <h2 className="member-name">Vanshika Gupta</h2>
+          <p className="member-role">Developer & Researcher</p>
+          <p className="member-description">
+            Implements key frontend features and conducts research to inform our technical approach.
+          </p>
+        </div>
 
-          {/* Team Member 4 */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
+        {/* Team Member 4 */}
+        <div className="team-card">
+          <div className="image-container">
             <img
               src={IshanaMokashiImage}
               alt="Ishana Mokashi"
-              className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
+              className="team-image"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/160";
+              }}
             />
-            <h2 className="text-xl font-semibold text-gray-800">Ishana Mokashi (Developer & Researcher)</h2>
-            <p className="text-gray-600 mt-3">
-              Focuses on algorithm development and performance optimization.
-            </p>
           </div>
+          <h2 className="member-name">Ishana Mokashi</h2>
+          <p className="member-role">Developer & Researcher</p>
+          <p className="member-description">
+            Focuses on algorithm development and performance optimization.
+          </p>
+        </div>
 
-          {/* Team Member 5 */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
+        {/* Team Member 5 */}
+        <div className="team-card">
+          <div className="image-container">
             <img
               src={PeiqiLiImage}
               alt="Peiqi Li"
-              className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
+              className="team-image"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/160";
+              }}
             />
-            <h2 className="text-xl font-semibold text-gray-800">Peiqi Li (Developer & Researcher)</h2>
-            <p className="text-gray-600 mt-3">
-              Specializes in user interface implementation.
-            </p>
           </div>
+          <h2 className="member-name">Peiqi Li</h2>
+          <p className="member-role">Developer & Researcher</p>
+          <p className="member-description">
+            Specializes in user interface implementation.
+          </p>
+        </div>
 
-          {/* Team Member 6 */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
+        {/* Team Member 6 */}
+        <div className="team-card">
+          <div className="image-container">
             <img
               src={AminSheikhImage}
               alt="Amin Sheikh"
-              className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
+              className="team-image"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/160";
+              }}
             />
-            <h2 className="text-xl font-semibold text-gray-800">Amin Sheikh (Data Engineer & Project Manager)</h2>
-            <p className="text-gray-600 mt-3">
-              Manages project timelines and implemented risk score analysis.
-            </p>
           </div>
+          <h2 className="member-name">Amin Sheikh</h2>
+          <p className="member-role">Data Engineer & Project Manager</p>
+          <p className="member-description">
+            Manages project timelines and implemented risk score analysis.
+          </p>
+        </div>
+      </div>
 
-        
-
-          <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">Our Advisors</h1>
-          
-          {/* Professor */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
+      <h1 className="advisors-title">Our Advisors</h1>
+      
+      <div className="advisors-grid">
+        {/* Advisor 1 */}
+        <div className="advisor-card">
+          <div className="image-container">
             <img
               src={AmirHerzbergImage}
-              alt="Amir Herzberg"
-              className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
+              alt="Professor Herzberg"
+              className="team-image"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/160";
+              }}
             />
-            <h2 className="text-xl font-semibold text-gray-800">Professor Herzberg (Faculty Advisor)</h2>
-            <p className="text-gray-600 mt-3">
-              Comcast Professor for Cybersecurity Innovation at UConn's School of Computing.
-              Expert in internet security, applied cryptography, and privacy with a Ph.D. from Technion (Israel).
-              Former researcher at IBM Research and professor at Bar Ilan University.
-              Provides academic guidance and ensures the project meets educational objectives.
-            </p>
           </div>
+          <h2 className="member-name">Professor Herzberg</h2>
+          <p className="member-role">Faculty Advisor</p>
+          <p className="member-description">
+            Comcast Professor for Cybersecurity Innovation at UConn's School of Computing.
+            Expert in internet security, applied cryptography, and privacy with a Ph.D. from Technion (Israel).
+            Former researcher at IBM Research and professor at Bar Ilan University.
+            Provides academic guidance and ensures the project meets educational objectives.
+          </p>
+        </div>
 
-          {/* Mike Knas */}
-          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow text-center">
+        {/* Advisor 2 */}
+        <div className="advisor-card">
+          <div className="image-container">
             <img
               src={MikeKnasImage}
               alt="Mike Knas"
-              className="w-40 h-40 object-cover rounded-full mx-auto mb-4 border-4 border-blue-100"
+              className="team-image"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "https://via.placeholder.com/160";
+              }}
             />
-            <h2 className="text-xl font-semibold text-gray-800">Mike Knas (Industry Mentor)</h2>
-            <p className="text-gray-600 mt-3">
-              Assistant Vice President of Emerging Technology & Innovation at The Hartford.
-              Brings expertise in emerging technologies, design thinking, and patented solutions to bridge academic research with real-world applications.
-            </p>
           </div>
-          </div>
+          <h2 className="member-name">Mike Knas</h2>
+          <p className="member-role">Industry Mentor</p>
+          <p className="member-description">
+            Assistant Vice President of Emerging Technology & Innovation at The Hartford.
+            Brings expertise in emerging technologies, design thinking, and patented solutions to bridge academic research with real-world applications.
+          </p>
+        </div>
       </div>
-    );
+    </div>
+  );
 };
 
 export default AboutUs;
