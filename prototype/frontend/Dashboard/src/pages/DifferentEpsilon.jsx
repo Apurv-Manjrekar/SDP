@@ -22,7 +22,7 @@ export default function DataViewer() {
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">The Impact of Epsilon on Risk Scores</h1>
+      {/* <h1 className="text-xl font-bold mb-4">The Impact of Epsilon on Risk Scores</h1> */}
 
     {/* Image Section */}
     <div className="mb-8">  {/* Increased margin-bottom for more space */}

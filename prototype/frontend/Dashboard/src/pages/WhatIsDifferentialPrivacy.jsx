@@ -11,9 +11,9 @@ const WhatIsDifferentialPrivacy = () => {
         lineHeight: "1.6",
       }}
     >
-      <h1 style={{ fontSize: "2rem", textAlign: "center" }}>
+      {/* <h1 style={{ fontSize: "2rem", textAlign: "center" }}>
         What is Differential Privacy?
-      </h1>
+      </h1> */}
       <p>
         Differential Privacy is a powerful technique used to protect personal
         data while still enabling meaningful insights from datasets. It works by

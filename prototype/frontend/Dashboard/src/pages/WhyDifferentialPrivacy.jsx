@@ -12,7 +12,7 @@ const WhyDifferentialPrivacy = () => {
         textAlign: "center",
       }}
     >
-      <h1 style={{ fontSize: "2rem" }}>Why Differential Privacy?</h1>
+      {/* <h1 style={{ fontSize: "2rem" }}>Why Differential Privacy?</h1> */}
       <p>
         The Hartford is exploring differential privacy to address the increasing
         importance of data protection and regulatory compliance in the insurance
