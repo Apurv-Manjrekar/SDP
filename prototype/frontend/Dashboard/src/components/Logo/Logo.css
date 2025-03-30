@@ -1,0 +1,17 @@
+.logo {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  padding: 10px;
+  height: 90px;
+  gap: 10px;
+  background-color: #58595a;
+  /* ensure padding doesn't shrink the content */
+  box-sizing: border-box;
+}
+.logo-icon {
+  padding: 5px;
+  height: 80px;
+}

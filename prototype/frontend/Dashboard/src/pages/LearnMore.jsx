@@ -9,7 +9,7 @@ const LearnMore = () => {
   return (
     <div className="min-h-screen p-8 bg-gray-100 flex flex-col items-center">
       <div className="text-left max-w-2xl w-full"> 
-        <h1 className="text-4xl font-bold mb-6">What is Differential Privacy?</h1>
+        {/* <h1 className="text-4xl font-bold mb-6">What is Differential Privacy?</h1> */}
         <p className="text-lg mb-4 whitespace-normal"> 
         {cleanText(`
             Differential privacy is a framework for data analysis that allows meaningful insights to be drawn 

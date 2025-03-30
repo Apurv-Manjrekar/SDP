@@ -1,0 +1,31 @@
+.menu-list {
+  height: calc(100vh - 80px);
+  max-height: calc(100vh - 80px);
+  padding-bottom: 50px;
+  width: 100%;
+  font-size: 1rem;
+  position: relative;
+  background: #e4e4e4;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+/* Menu item styling */
+.menu-list .ant-menu-item {
+  font-size: 1rem; /* Regular size for main items */
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+/* Sub-menu item styling */
+.menu-list .ant-menu-submenu .ant-menu-item {
+  font-size: 0.875rem; /* Smaller font size for sub-menu items */
+  margin-bottom: 5px;
+  margin-top: 5px;
+}
+
+/* Sub-menu title styling */
+.menu-list .ant-menu-submenu-title {
+  margin-bottom: 12px; /* Add space below sub-menu titles */
+  margin-top: 10px;
+}

@@ -3,8 +3,9 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap,
 import { useLocation } from "react-router-dom";
 import L from "leaflet";
 import "./DynamicSimulation.css";
+import "./DashboardStyles.css";
 import 'leaflet/dist/leaflet.css';
-import SimulationFlow from './../components/SimulationFlow';
+import SimulationFlow from '../components/SimulationFlow/SimulationFlow';
 
 const DynamicSimulation = () => {
   const [startPoint, setStartPoint] = useState("");
@@ -586,8 +587,8 @@ const DynamicSimulation = () => {
   };
 
   return (
-    <div className="simulation-container">
-      <h1>SUMO Simulation</h1>
+    <div className="dashboard-container">
+      {/* <h1>SUMO Simulation</h1> */}
       <div className="simulation-content">
         {/* Map Section */}
         {view === "run-simulation" && (
@@ -728,61 +729,66 @@ const DynamicSimulation = () => {
         )}
       </div>
 
-        {/* Vehicle Data Section */}
-        <div className="vehicle-data-section">
-          {/* <h2>Vehicle Data</h2> */}
-          <div className="vehicle-selector">
-            <label>
-              Select Vehicle: 
-              <select
-                value={selectedVehicle}
-                onChange={(e) => setSelectedVehicle(e.target.value)}
-                disabled={vehicleList.length === 0}
-              >
-                {vehicleList.length === 0 ? (
-                  <option value="">No vehicles available</option>
-                ) : (
-                  vehicleList.map((vehicle) => (
-                    <option key={vehicle} value={vehicle}>
-                      {vehicle}
-                    </option>
-                  ))
-                )}
-              </select>
-            </label>
-            {/* Epsilon and Apply DP (only for DP view) */}
-            {view === "dp-simulation-data" && (
-              <div className="dp-controls">
-                <label htmlFor="epsilon-slider">Epsilon (Differential Privacy): {epsilon}</label>
-                <input
-                  type="range"
-                  id="epsilon-slider"
-                  min="0.1"
-                  max="10"
-                  step="0.1"
-                  value={epsilon}
-                  onChange={(e) => setEpsilon(parseFloat(e.target.value))}
-                />
-                <button
-                  onClick={applyDifferentialPrivacy}
-                  disabled={!selectedVehicle || isApplyingDP}
-                >
-                  {isApplyingDP ? "Applying DP..." : "Apply Differential Privacy"}
-                </button>
-              </div>
+      {/* Vehicle Selection Section */}
+      <div className="vehicle-selection-container">
+        {/* <h2>Vehicle Data</h2> */}
+        <div className="vehicle-selector">
+          <label>
+            Select Vehicle: 
+          </label>
+          <select
+            value={selectedVehicle}
+            onChange={(e) => setSelectedVehicle(e.target.value)}
+            disabled={vehicleList.length === 0}
+          >
+            {vehicleList.length === 0 ? (
+              <option value="">No vehicles available</option>
+            ) : (
+              vehicleList.map((vehicle) => (
+                <option key={vehicle} value={vehicle}>
+                  {vehicle}
+                </option>
+              ))
             )}
-
-            {/* Risk Score Button (only for Risk view) */}
-            {view === "simulation-risk-scores" && (
-              <button
-                onClick={calculateRiskScores}
-                disabled={!isDpApplied || isCalculatingRisk}
-              >
-                {isCalculatingRisk ? "Calculating..." : "Calculate Risk Scores"}
-              </button>
-            )}
+          </select>
+        </div>
+        {/* Epsilon and Apply DP (only for DP view) */}
+        {view === "dp-simulation-data" && (
+          <div className="dp-controls">
+            <label htmlFor="epsilon-slider">Epsilon (Differential Privacy): {epsilon}</label>
+            <input
+              type="range"
+              id="epsilon-slider"
+              min="0.1"
+              max="10"
+              step="0.1"
+              value={epsilon}
+              onChange={(e) => setEpsilon(parseFloat(e.target.value))}
+            />
+            <button
+              onClick={applyDifferentialPrivacy}
+              disabled={!selectedVehicle || isApplyingDP}
+            >
+              {isApplyingDP ? "Applying DP..." : "Apply Differential Privacy"}
+            </button>
           </div>
+        )}
 
+        {/* Risk Score Button (only for Risk view) */}
+        {view === "simulation-risk-scores" && (
+          <button
+            onClick={calculateRiskScores}
+            disabled={!isDpApplied || isCalculatingRisk}
+          >
+            {isCalculatingRisk ? "Calculating..." : "Calculate Risk Scores"}
+          </button>
+        )}
+      </div>
+
+      {/* Vehicle Data Section */}
+      {selectedVehicle && (
+        <div className="vehicle-data-container">
+      
           {/* Display Original Data */}
           {view === "raw-simulation-data" && (
             selectedVehicle && (
@@ -971,37 +977,38 @@ const DynamicSimulation = () => {
             )
           )}
         </div>
+      )}
 
-        {/* Flow Chart and Logs */}
-        {view === "run-simulation" && (
-          <div className="flow-log-container">
-            <div className="flow-chart-container">
-              <div className="flow-chart">
-                <label>Simulation Flow</label>
-                <SimulationFlow />
-              </div>
-            </div>
-            <div className="log-container">
-              <div className="log-list">
-                {/* Display the logs */}
-                {logs.map((log, index) => {
-                  // Check if the log contains 'ERROR'
-                  const logClass = log.includes("ERROR") ? "error" : "success"; // Default to 'success' if not 'ERROR'
-
-                  return (
-                    <div key={index} className={`log ${logClass}`}>
-                      {log}
-                    </div>
-                  );
-                })}
-              </div>
+      {/* Flow Chart and Logs */}
+      {view === "run-simulation" && (
+        <div className="flow-log-container">
+          <div className="flow-chart-container">
+            <div className="flow-chart">
+              <label>Simulation Flow</label>
+              <SimulationFlow />
             </div>
           </div>
-        )}
+          <div className="log-container">
+            <div className="log-list">
+              {/* Display the logs */}
+              {logs.map((log, index) => {
+                // Check if the log contains 'ERROR'
+                const logClass = log.includes("ERROR") ? "error" : "success"; // Default to 'success' if not 'ERROR'
 
-        {error && <div style={{ color: "red" }}>Error: {error}</div>}
-        {successMessage && <div style={{ color: "green" }}>{successMessage}</div>}
-      </div>
+                return (
+                  <div key={index} className={`log ${logClass}`}>
+                    {log}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && <div style={{ color: "red" }}>Error: {error}</div>}
+      {successMessage && <div style={{ color: "green" }}>{successMessage}</div>}
+    </div>
   );
 };
 
