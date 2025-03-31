@@ -1,4 +1,5 @@
 import { Layout } from "antd";
+import { useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Logo from "./components/Logo/Logo";
 import HartfordLogo from "./assets/hartford-logo.png";
@@ -19,6 +20,7 @@ import "./App.css";
 const { Header, Sider, Content } = Layout;
 
 const App = () => {
+  const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const renderHeaderContent = () => {
     console.log("Current Route:", location.pathname);
@@ -51,14 +53,17 @@ const App = () => {
 
   return (
     <Layout>
-      <Sider className="sidebar" width={'250px'}>
+      <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)} className="sidebar" width={'250px'} trigger={null}>
         <div className="logo-container">
-          <Logo />
+        <Logo collapsed={collapsed} />
         </div>
         <MenuList />
+        <div className="collapse-button" onClick={() => setCollapsed(!collapsed)}>
+          {collapsed ? ">" : "<"}
+        </div>
       </Sider>
       <Layout>
-        <Content className="content">
+        <Content className={`content ${collapsed ? "expanded" : ""}`}>
           <Header className="header">
             <div className="header-content">
               {renderHeaderContent()} {/* Dynamically render content based on the route */}

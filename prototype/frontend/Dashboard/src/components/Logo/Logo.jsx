@@ -4,13 +4,12 @@ import HartfordLogo from "../../assets/hartford-logo.png";
 import UConnLogo from "../../assets/uconn-logo.png";
 import "./Logo.css";
 
-const Logo = () => {
+const Logo = ({ collapsed }) => {
     return (
-        <div>
-            <div className="logo">
-                <img src={HartfordLogo} alt="Hartford" className="logo-icon" />
-                <img src={UConnLogo} alt="UConn" className="logo-icon" />
-            </div>
+        <div className={`logo ${collapsed ? "collapsed" : ""}`}>
+            <img src={HartfordLogo} alt="Hartford" className="logo-icon" />
+            <img src={UConnLogo} alt="UConn" className="logo-icon" />
+            {/* {!collapsed && <img src={UConnLogo} alt="UConn" className="logo-icon" />} */}
         </div>
     );
 };

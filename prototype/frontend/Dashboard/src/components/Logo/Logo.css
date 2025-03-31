@@ -11,7 +11,17 @@
   /* ensure padding doesn't shrink the content */
   box-sizing: border-box;
 }
+
+.logo.collapsed {
+  flex-direction: column; /* Stack logos vertically when collapsed */
+}
+
 .logo-icon {
   padding: 5px;
   height: 80px;
+}
+
+.logo.collapsed .logo-icon {
+  padding: 5px;
+  height: 35px; /* Reduce size when collapsed */
 }
