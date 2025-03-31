@@ -57,6 +57,23 @@ body {
   justify-content: space-evenly;
 }
 
+.collapse-button {
+  width: 100%;
+  padding: 10px 0;
+  text-align: center;
+  background: #e4e4e4; /* Match menu-list background */
+  color: #000;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: absolute;
+  bottom: 0; /* Stick to the bottom */
+}
+
+.collapse-button:hover {
+  background: #d1d1d1; /* Slight hover effect */
+}
+
 /* Logo container */
 .logo-container {
   position: sticky; /* Keeps the logo fixed at the top */
@@ -82,6 +99,11 @@ body {
   overflow-x: hidden; /* Prevent unnecessary horizontal scroll */
   overflow-y: auto; /* Allow vertical scrolling only if needed */
   box-sizing: border-box; /* Ensure padding doesn't shrink the content */
+}
+
+.content.expanded {
+  margin-left: 80px;
+  width: calc(100vw - 80px);
 }
 
 .footer {
