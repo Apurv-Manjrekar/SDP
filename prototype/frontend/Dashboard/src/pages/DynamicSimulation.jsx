@@ -730,9 +730,9 @@ const DynamicSimulation = () => {
       </div>
 
       {/* Vehicle Selection Section */}
-      <div className="vehicle-selection-container">
+      <div className="selection-container">
         {/* <h2>Vehicle Data</h2> */}
-        <div className="vehicle-selector">
+        <div className="selector">
           <label>
             Select Vehicle: 
           </label>
@@ -787,7 +787,7 @@ const DynamicSimulation = () => {
 
       {/* Vehicle Data Section */}
       {selectedVehicle && (
-        <div className="vehicle-data-container">
+        <div className="data-container">
       
           {/* Display Original Data */}
           {view === "raw-simulation-data" && (

@@ -1,158 +1,34 @@
 import React from "react"; 
 import { Link } from "react-router-dom";
-import HartfordLogo from "../assets/hartford-logo.png";
-import UConnLogo from "../assets/uconn-logo.png";
+import "./Info.css";
 
 const Home = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center flex-col bg-gray-100">
-      {/* <h1 className="text-4xl font-bold">Welcome to the Differential Privacy Dashboard</h1> */}
-      <p className="text-lg text-gray-700 mt-4">
-        <Link to="/learn-more" className="text-blue-500 hover:underline">
-          Learn how differential privacy protects data while maintaining statistical utility.
-        </Link>
-      </p>
-      
-      <div className="absolute top-0 left-0 flex items-center gap-8 p-2">
-        <img 
-          src={HartfordLogo} 
-          alt="Hartford" 
-          className="w-16 h-auto ml-1" 
-        />
-        <img 
-          src={UConnLogo} 
-          alt="UConn" 
-          className="w-16 h-auto" 
-        />
+    <div className="info-container">
+      <div className="info-content">
+        {/* <h1 className="info-title">Welcome to the Differential Privacy Dashboard</h1> */}
+        
+        <p className="info-text">
+          This platform is designed to help you understand and explore differential privacy, a technique that protects sensitive data while preserving statistical accuracy.
+        </p>
+        
+        <h2 className="info-subtitle">What This Website Offers</h2>
+        <ul className="info-list">
+          <li>A large static pre-simulated vehicle telematics dataset to explore the application of differential privacy in the insurance space.</li>
+          <li>A dynamic simulation for you to simulate your own vehicle trip and explore the effects of differential privacy.</li>
+          <li>Statistical analysis visualizing the balance between privacy and data utility.</li>
+          <li>The ability to learn more about differential privacy.</li>
+        </ul>
+        
+        <h2 className="info-subtitle">How It Works</h2>
+        <p className="info-text">
+          Our prototype utilizes SUMO (Simulation of Urban Mobility) to simulate vehicle behavior and collect telemetry data. Once the data is processed 
+          and cleaned, OpenMinded's PyDp (a Python wrapper for Google's Differential Privacy Library) is used to add noise to the data. 
+          After this, risk scores are calculated for each vehicle. We then compare and analyze the risk scores with and without differential privacy.
+        </p>
       </div>
     </div>
   );
 };
 
 export default Home;
-
-// import React, { useState, useEffect } from "react";
-// import { Routes, Route, Link } from "react-router-dom";
-// import { MapContainer, TileLayer, Polyline } from "react-leaflet";
-// import "leaflet/dist/leaflet.css";
-
-// const API_URL = "http://localhost:8000";
-
-// const Home = () => {
-//   const [vehicles, setVehicles] = useState([]);
-//   const [selectedVehicle, setSelectedVehicle] = useState("all");
-//   const [riskScores, setRiskScores] = useState([]);
-//   const [dpRiskScores, setDpRiskScores] = useState([]);
-//   const [epsilon, setEpsilon] = useState(1.0);
-//   const [isApplyingDp, setIsApplyingDp] = useState(false);
-
-//   useEffect(() => {
-//     fetch(`${API_URL}/vehicles`)
-//       .then(res => res.json())
-//       .then(data => setVehicles(data))
-//       .catch(err => console.error("Error fetching vehicles:", err));
-
-//     fetch(`${API_URL}/get-risk-score`)
-//       .then(res => res.json())
-//       .then(data => setRiskScores(data))
-//       .catch(err => console.error("Error fetching risk scores:", err));
-
-//     fetch(`${API_URL}/get-dp-risk-score`)
-//       .then(res => res.json())
-//       .then(data => setDpRiskScores(data))
-//       .catch(err => console.error("Error fetching DP risk scores:", err));
-//   }, []);
-
-//   const handleApplyDp = async () => {
-//     setIsApplyingDp(true);
-//     await fetch(`${API_URL}/apply-dp`, {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ epsilon }),
-//     });
-//     setIsApplyingDp(false);
-//   };
-
-//   return (
-//     <div className="container mx-auto p-6">
-//       <h1 className="text-3xl font-bold text-center mb-6">Risk Dashboard</h1>
-//       <button onClick={handleApplyDp} disabled={isApplyingDp} className="bg-blue-500 text-white px-4 py-2 rounded">
-//         {isApplyingDp ? "Applying DP..." : "Apply Differential Privacy"}
-//       </button>
-//       <div className="mb-6">
-//         <h2 className="text-xl font-bold">Risk Scores</h2>
-//         <table className="w-full border-collapse border border-gray-300">
-//           <thead>
-//             <tr className="bg-gray-200">
-//               <th className="border border-gray-300 p-2">Vehicle</th>
-//               <th className="border border-gray-300 p-2">Risk Score</th>
-//               <th className="border border-gray-300 p-2">DP Risk Score</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {riskScores.map((item, index) => (
-//               <tr key={index}>
-//                 <td className="border border-gray-300 p-2">{item.vehicle}</td>
-//                 <td className="border border-gray-300 p-2">{item.risk_score}</td>
-//                 <td className="border border-gray-300 p-2">{dpRiskScores[index]?.dp_risk_score || "N/A"}</td>
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
-//       </div>
-//     </div>
-//   );
-// };
-
-// const StaticDashboard = () => {
-//   const [tripData, setTripData] = useState([]);
-//   useEffect(() => {
-//     fetch(`${API_URL}/trip-data`)
-//       .then(res => res.json())
-//       .then(data => setTripData(data))
-//       .catch(err => console.error("Error fetching trip data:", err));
-//   }, []);
-//   return (
-//     <div className="container mx-auto p-6">
-//       <h1 className="text-3xl font-bold text-center mb-6">Static Vehicle Risk Dashboard</h1>
-//       <MapContainer center={[40.7128, -74.006]} zoom={12} className="h-96 w-full">
-//         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-//         {tripData.map((trip, index) => (
-//           <Polyline key={index} positions={trip.coordinates} color="blue" />
-//         ))}
-//       </MapContainer>
-//     </div>
-//   );
-// };
-
-// const DynamicSimulation = () => {
-//   return (
-//     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-//       <h1 className="text-4xl font-bold">Dynamic Simulation Coming Soon!</h1>
-//     </div>
-//   );
-// };
-
-// const App = () => {
-//   return (
-//     <div>
-//       <nav className="bg-gray-800 p-4 text-white">
-//         <div className="container mx-auto flex justify-between">
-//           <h1 className="text-xl font-bold">Differential Privacy Dashboard</h1>
-//           <div>
-//             <Link to="/" className="px-4">Home</Link>
-//             <Link to="/static-dashboard" className="px-4">Static Dashboard</Link>
-//             <Link to="/dynamic-simulation" className="px-4">Dynamic Simulation</Link>
-//           </div>
-//         </div>
-//       </nav>
-//       <Routes>
-//         <Route path="/" element={<Home />} />
-//         <Route path="/static-dashboard" element={<StaticDashboard />} />
-//         <Route path="/dynamic-simulation" element={<DynamicSimulation />} />
-//       </Routes>
-//     </div>
-//   );
-// };
-
-// export default App;

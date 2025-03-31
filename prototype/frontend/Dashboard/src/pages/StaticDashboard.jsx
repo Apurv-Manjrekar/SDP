@@ -641,10 +641,10 @@ const StaticDashboard = () => {
       }
 
       {/* Vehicle Selection */}
-      <div className="vehicle-selection-container">
+      <div className="selection-container">
 
         {/* Vehicle Type Selection */}
-        <div className="vehicle-selector">
+        <div className="selector">
           <label >
             Select Vehicle Type:
           </label>
@@ -667,7 +667,7 @@ const StaticDashboard = () => {
         </div>
 
         {/* Vehicle Selection */}
-        <div className="vehicle-selector">
+        <div className="selector">
           <label>
             Select Vehicle:
           </label>
@@ -690,7 +690,7 @@ const StaticDashboard = () => {
 
       
       {/* Vehicle Data Section */}
-      <div className="vehicle-data-container">
+      <div className="data-container">
 
         {/* Original Vehicle Data */}
         {view === "raw-vehicle-data" && (

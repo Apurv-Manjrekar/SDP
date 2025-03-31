@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import "./DashboardStyles.css";
+import "./DifferentEpsilon.css";
 
 const epsilonValues = [0.01, 0.1, 0.5, 1, 2, 5, 7, 10];
 
@@ -21,60 +23,67 @@ export default function DataViewer() {
   };
 
   return (
-    <div className="p-6">
+    <div className="dashboard-container">
       {/* <h1 className="text-xl font-bold mb-4">The Impact of Epsilon on Risk Scores</h1> */}
 
-    {/* Image Section */}
-    <div className="mb-8">  {/* Increased margin-bottom for more space */}
-        <img
-          src="http://localhost:8000/images/risk_vs_epsilon.png"
-          alt="Risk vs Epsilon Graph"
-          style={{ width: '80%' }}
-          className="mx-auto border rounded-lg shadow-md"
-        />
+      {/* Image Section */}
+      <div className="graph-container">  {/* Increased margin-bottom for more space */}
+          <img
+            src="http://localhost:8000/images/risk_vs_epsilon.png"
+            alt="Risk vs Epsilon Graph"
+            // style={{ width: '80%' }}
+            // className="mx-auto border rounded-lg shadow-md"
+          />
       </div>
 
       {/* Subheader for Dropdown */}
-      <h2 className="text-lg font-semibold mb-2">
+      {/* <h2>
         Select an epsilon value to see the risk scores change
-      </h2>
+      </h2> */}
 
-      {/* Native Select Dropdown */}
-      <label htmlFor="epsilon-select" className="block mb-2">Select Epsilon Value:</label>
-      <select
-        id="epsilon-select"
-        value={selectedEpsilon}
-        onChange={(e) => setSelectedEpsilon(parseFloat(e.target.value))}
-        className="p-2 border rounded"
-      >
-        {epsilonValues.map((epsilon) => (
-          <option key={epsilon} value={epsilon}>
-            {`${epsilon}`}
-          </option>
-        ))}
-      </select>
+      <div className="selection-container">
+        <div className="selector">
+          <label>
+            Select Epsilon:
+          </label>
+          <select
+            id="epsilon-select"
+            value={selectedEpsilon}
+            onChange={(e) => setSelectedEpsilon(parseFloat(e.target.value))}
+          >
+            {epsilonValues.map((epsilon) => (
+              <option key={epsilon} value={epsilon}>
+                {`${epsilon}`}
+              </option>
+            ))}
+          </select>
+        </div>
+
+      </div>
 
       {/* Table for Data */}
-      <div className="overflow-x-auto mt-4">
-        <table className="min-w-full border-collapse">
-          <thead>
-            <tr>
-              {/* Render the "Vehicle" and "DP Risk Score" columns */}
-              <th className="border px-4 py-2">Vehicle</th>
-              <th className="border px-4 py-2">DP Risk Score</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row, index) => (
-              <tr key={index}>
-                {/* Show Vehicle_ID in the first column */}
-                <td className="border px-4 py-2">{row.Vehicle_ID}</td>
-                {/* Show Risk_Score in the second column */}
-                <td className="border px-4 py-2">{row.Risk_Score}</td>
+      <div className="data-container">
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                {/* Render the "Vehicle" and "DP Risk Score" columns */}
+                <th>Vehicle</th>
+                <th>DP Risk Score</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data.map((row, index) => (
+                <tr key={index}>
+                  {/* Show Vehicle_ID in the first column */}
+                  <td>{row.Vehicle_ID}</td>
+                  {/* Show Risk_Score in the second column */}
+                  <td>{row.Risk_Score}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
