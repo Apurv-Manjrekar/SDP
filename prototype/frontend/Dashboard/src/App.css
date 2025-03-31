@@ -83,3 +83,19 @@ body {
   overflow-y: auto; /* Allow vertical scrolling only if needed */
   box-sizing: border-box; /* Ensure padding doesn't shrink the content */
 }
+
+.footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  width: 100%;
+  justify-content: center;
+  border-top: 1px solid #d1d5db;
+}
+
+.footer img {
+  width: 64px;
+  height: auto;
+}

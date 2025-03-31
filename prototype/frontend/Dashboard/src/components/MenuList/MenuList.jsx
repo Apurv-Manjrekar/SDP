@@ -45,8 +45,8 @@ const MenuList = () => {
       </Menu.SubMenu>
 
       <Menu.SubMenu key="differential-privacy" icon={<InfoCircleOutlined />} title="Differential Privacy">
-        <Menu.Item key="why-differential-privacy" icon={<QuestionCircleOutlined />}>
-        <Link to="/why-differential-privacy">Why Differential Privacy?</Link>
+        <Menu.Item key="the-hartford-interest" icon={<QuestionCircleOutlined />}>
+        <Link to="/the-hartford-interest">The Hartford's Interest</Link>
         </Menu.Item>
         <Menu.Item key="what-is-differential-privacy" icon={<BulbOutlined />}>
         <Link to="/what-is-differential-privacy">What is Differential Privacy?</Link>
