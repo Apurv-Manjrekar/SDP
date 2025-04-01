@@ -68,8 +68,8 @@ const edges = [
 
 const SimulationFlow = () => {
   return (
-    <div style={{ height: 400, width: '100%', marginTop: '2rem', border: '1px solid black', backgroundColor: '#e0e0e0' }}>
-      <ReactFlow nodes={nodes} edges={edges} fitView>
+    <div style={{ height: '85%', width: '95%', marginTop: '2rem', border: '1px solid black', backgroundColor: '#e0e0e0' }}>
+      <ReactFlow nodes={nodes} edges={edges} fitView minZoom={0.1} maxZoom={5}>
         <Background />
         <Controls />
       </ReactFlow>

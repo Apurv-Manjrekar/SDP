@@ -555,86 +555,87 @@ const StaticDashboard = () => {
         <strong className="font-bold">Error: </strong>
         <span className="block sm:inline">{error}</span>
       </div>}
-
       {view === "map" && (
-        <div className="map-wrapper">
-          <div className="map-container">
-          <MapContainer
-            center={[(sumoBounds[0][0] + sumoBounds[1][0])/2, (sumoBounds[0][1] + sumoBounds[1][1])/2]}
-            zoom={13}
-            maxBounds={sumoBounds}
-            maxBoundsViscosity={1.0} // Prevent dragging outside
-            scrollWheelZoom={false}
-            doubleClickZoom={false}
-            style={{ height: "100%", width: "100%" }}
-          >
-              <TileLayer 
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
-              />
-              <FitBoundsOnMount bounds={sumoBounds} />
-              <MapClickHandler />
-              <Rectangle
-                bounds={sumoBounds}
-                pathOptions={{ color: 'black', weight: 1, fillOpacity: 0 }}
-              />
+        <div className="static-map">
+          <div className="map-wrapper">
+            <div className="map-container">
+            <MapContainer
+              center={[(sumoBounds[0][0] + sumoBounds[1][0])/2, (sumoBounds[0][1] + sumoBounds[1][1])/2]}
+              zoom={13}
+              maxBounds={sumoBounds}
+              maxBoundsViscosity={1.0} // Prevent dragging outside
+              scrollWheelZoom={false}
+              doubleClickZoom={false}
+              style={{ height: "100%", width: "100%" }}
+            >
+                <TileLayer 
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+                />
+                <FitBoundsOnMount bounds={sumoBounds} />
+                <MapClickHandler />
+                <Rectangle
+                  bounds={sumoBounds}
+                  pathOptions={{ color: 'black', weight: 1, fillOpacity: 0 }}
+                />
 
-              {/* Only show route-related elements if data is available */}
-              {vehicleRoute.length > 0 && dpVehicleRoute.length > 0 && (
-                <>
-                  {startPoint && (
-                    <Marker position={startPoint}>
-                      <Popup>Start Point</Popup>
-                    </Marker>
-                  )}
-                  {endPoint && (
-                    <Marker position={endPoint}>
-                      <Popup>End Point</Popup>
-                    </Marker>
-                  )}
+                {/* Only show route-related elements if data is available */}
+                {vehicleRoute.length > 0 && dpVehicleRoute.length > 0 && (
+                  <>
+                    {startPoint && (
+                      <Marker position={startPoint}>
+                        <Popup>Start Point</Popup>
+                      </Marker>
+                    )}
+                    {endPoint && (
+                      <Marker position={endPoint}>
+                        <Popup>End Point</Popup>
+                      </Marker>
+                    )}
 
-                  {vehicleRoute.length > 1 && <MapBoundsFitter route={vehicleRoute} />} 
-                  {combinedRoute.length > 1 && (
-                    <>
-                      <Polyline
-                        positions={combinedRoute.map(p => [p.lat, p.lng])}
-                        color="blue"
-                        weight={3}
-                      />
-
-                      {combinedRoute.map((point, index) => (
-                        <CircleMarker
-                          key={index}
-                          center={[point.lat, point.lng]}
-                          radius={0.01}
+                    {vehicleRoute.length > 1 && <MapBoundsFitter route={vehicleRoute} />} 
+                    {combinedRoute.length > 1 && (
+                      <>
+                        <Polyline
+                          positions={combinedRoute.map(p => [p.lat, p.lng])}
                           color="blue"
-                          opacity={0.5}
-                        >
-                          <Tooltip direction="top" offset={[0, -5]} opacity={1}>
-                            <div style={{ fontSize: "0.75rem" }}>
-                              <strong>Original:</strong>
-                              <div>Speed: {point.original.speed ?? "N/A"} km/h</div>
-                              <div>Acceleration: {point.original.acceleration ?? "N/A"} m/s²</div>
-                              <div>Time Gap: {point.original.timeGap ?? "N/A"} s</div>
-                              <br />
-                              <strong>DP:</strong>
-                              <div>Speed: {point.dp.speed ?? "N/A"} km/h</div>
-                              <div>Acceleration: {point.dp.acceleration ?? "N/A"} m/s²</div>
-                              <div>Time Gap: {point.dp.timeGap ?? "N/A"} s</div>
-                            </div>
-                          </Tooltip>
-                        </CircleMarker>
-                      ))}
-                    </>
-                  )}
-                </>
-              )}
+                          weight={3}
+                        />
 
-                  {/* {dpVehicleRoute.length > 1 && <MapBoundsFitter route={dpVehicleRoute} />} 
-                  {dpVehicleRoute.length > 1 && (
-                    <Polyline positions={dpVehicleRoute} color="red" weight={3} />
-                  )} */}
-              
-            </MapContainer>
+                        {combinedRoute.map((point, index) => (
+                          <CircleMarker
+                            key={index}
+                            center={[point.lat, point.lng]}
+                            radius={0.01}
+                            color="blue"
+                            opacity={0.5}
+                          >
+                            <Tooltip direction="top" offset={[0, -5]} opacity={1}>
+                              <div style={{ fontSize: "0.75rem" }}>
+                                <strong>Original:</strong>
+                                <div>Speed: {point.original.speed ?? "N/A"} km/h</div>
+                                <div>Acceleration: {point.original.acceleration ?? "N/A"} m/s²</div>
+                                <div>Time Gap: {point.original.timeGap ?? "N/A"} s</div>
+                                <br />
+                                <strong>DP:</strong>
+                                <div>Speed: {point.dp.speed ?? "N/A"} km/h</div>
+                                <div>Acceleration: {point.dp.acceleration ?? "N/A"} m/s²</div>
+                                <div>Time Gap: {point.dp.timeGap ?? "N/A"} s</div>
+                              </div>
+                            </Tooltip>
+                          </CircleMarker>
+                        ))}
+                      </>
+                    )}
+                  </>
+                )}
+
+                    {/* {dpVehicleRoute.length > 1 && <MapBoundsFitter route={dpVehicleRoute} />} 
+                    {dpVehicleRoute.length > 1 && (
+                      <Polyline positions={dpVehicleRoute} color="red" weight={3} />
+                    )} */}
+                
+              </MapContainer>
+            </div>
           </div>
         </div>
         )
@@ -690,239 +691,239 @@ const StaticDashboard = () => {
 
       
       {/* Vehicle Data Section */}
-      <div className="data-container">
+      {view !== "map" && (
+        <div className="data-container">
 
-        {/* Original Vehicle Data */}
-        {view === "raw-vehicle-data" && (
-          <div className="data-display">
-            <h3>Original Vehicle Data</h3>
+          {/* Original Vehicle Data */}
+          {view === "raw-vehicle-data" && (
+            <div className="data-display">
+              <h3>Original Vehicle Data</h3>
 
-            {isLoading ? (
-              <p>Loading data...</p>
-            ) : vehicles.length > 0 ? (
-              <>
-                <div className="table-container">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Time</th>
-                        <th>Vehicle ID</th>
-                        <th>Speed</th>
-                        <th>Acceleration</th>
-                        <th>Latitude</th>
-                        <th>Longitude</th>
-                        <th>Lane</th>
-                        <th>Headway Distance</th>
-                        <th>Time Gap</th>
-                        <th>Speed Limit</th>
-                        <th>Lane Change</th>
-                        <th>Lane Change Reason</th>
-                        <th>Collision</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {vehicles.map((vehicle, idx) => (
-                        <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                          <td>{vehicle.Time}</td>
-                          <td>{vehicle.Vehicle_ID}</td>
-                          <td>{vehicle.Speed}</td>
-                          <td>{vehicle.Acceleration}</td>
-                          <td>{vehicle.Latitude}</td>
-                          <td>{vehicle.Longitude}</td>
-                          <td>{vehicle.Lane}</td>
-                          <td>{vehicle.Headway_Distance}</td>
-                          <td>{vehicle.Time_Gap}</td>
-                          <td>{vehicle.Speed_Limit}</td>
-                          <td>{formatValue(vehicle.Lane_Change)}</td>
-                          <td>{formatValue(vehicle.Lane_Change_Reason)}</td>
-                          <td>{formatValue(vehicle.Collision)}</td>
+              {isLoading ? (
+                <p>Loading data...</p>
+              ) : vehicles.length > 0 ? (
+                <>
+                  <div className="table-container">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Time</th>
+                          <th>Vehicle ID</th>
+                          <th>Speed</th>
+                          <th>Acceleration</th>
+                          <th>Latitude</th>
+                          <th>Longitude</th>
+                          <th>Lane</th>
+                          <th>Headway Distance</th>
+                          <th>Time Gap</th>
+                          <th>Speed Limit</th>
+                          <th>Lane Change</th>
+                          <th>Lane Change Reason</th>
+                          <th>Collision</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="pagination">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1, 'vehicle')}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </button>
-                  <span>
-                    Page {currentPage} of {totalPages}
-                    </span>
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1, 'vehicle')}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </button>
-                </div>
-              </>
-            ) : (
-              <p>No data available</p>
-            )}
-          </div>
-        )}
-        {/* DP Vehicle Data */}
-        {view === 'dp-vehicle-data' && (
-          <div className="data-display">
-            <h3>Differential Privacy Vehicle Data (Applied Epsilon: 5.0)</h3>
-
-            {isDpLoading ? (
-              <p>Loading data...</p>
-            ) : dpVehicles.length > 0 ? (
-              <>
-                <div className="table-container">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Time</th>
-                        <th>Vehicle ID</th>
-                        <th>Speed</th>
-                        <th>Acceleration</th>
-                        <th>Latitude</th>
-                        <th>Longitude</th>
-                        <th>Lane</th>
-                        <th>Headway Distance</th>
-                        <th>Time Gap</th>
-                        <th>Speed Limit</th>
-                        <th>Lane Change</th>
-                        <th>Lane Change Reason</th>
-                        <th>Collision</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dpVehicles.map((vehicle, idx) => (
-                        <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                          <td>{vehicle.Time}</td>
-                          <td>{vehicle.Vehicle_ID}</td>
-                          <td>{vehicle.Speed}</td>
-                          <td>{vehicle.Acceleration}</td>
-                          <td>{vehicle.Latitude}</td>
-                          <td>{vehicle.Longitude}</td>
-                          <td>{vehicle.Lane}</td>
-                          <td>{vehicle.Headway_Distance}</td>
-                          <td>{vehicle.Time_Gap}</td>
-                          <td>{vehicle.Speed_Limit}</td>
-                          <td>{formatValue(vehicle.Lane_Change)}</td>
-                          <td>{formatValue(vehicle.Lane_Change_Reason)}</td>
-                          <td>{formatValue(vehicle.Collision)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="pagination">
-                  <button
-                    onClick={() => handlePageChange(dpCurrentPage - 1, 'dp')}
-                    disabled={dpCurrentPage === 1}
-                  >
-                    Previous
-                  </button>
-                  <span>
-                    Page {dpCurrentPage} of {dpTotalPages}
-                    </span>
-                  <button
-                    onClick={() => handlePageChange(dpCurrentPage + 1, 'dp')}
-                    disabled={dpCurrentPage === dpTotalPages}
-                  >
-                    Next
-                  </button>
-                </div>
-              </>
-            ) : (
-              <p>No data available</p>
-            )}
-          </div>
-        )}
-
-        {/* Risk Score Table */}
-        {view === "risk-scores" && (
-          (riskScores.original || riskScores.dp) && (
-            <div className="risk-scores-display">
-              <h3>Risk Scores (Applied Epsilon: 5.0)</h3>
-              <div className="risk-scores-container">
-                {/* Check if both original and dp are available */}
-                {(riskScores.original && riskScores.dp) && (
-                  <>
-                    <div className="risk-score-section">
-                      <h4>Combined Risk Scores</h4>
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Vehicle_ID</th>
-                            <th>Original_Risk_Score</th>
-                            <th>DP_Risk_Score</th>
+                      </thead>
+                      <tbody>
+                        {vehicles.map((vehicle, idx) => (
+                          <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                            <td>{vehicle.Time}</td>
+                            <td>{vehicle.Vehicle_ID}</td>
+                            <td>{vehicle.Speed}</td>
+                            <td>{vehicle.Acceleration}</td>
+                            <td>{vehicle.Latitude}</td>
+                            <td>{vehicle.Longitude}</td>
+                            <td>{vehicle.Lane}</td>
+                            <td>{vehicle.Headway_Distance}</td>
+                            <td>{vehicle.Time_Gap}</td>
+                            <td>{vehicle.Speed_Limit}</td>
+                            <td>{formatValue(vehicle.Lane_Change)}</td>
+                            <td>{formatValue(vehicle.Lane_Change_Reason)}</td>
+                            <td>{formatValue(vehicle.Collision)}</td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {riskScores.original.map((originalRow, index) => {
-                            // Look for the corresponding dp row based on Vehicle_ID
-                            const dpRow = riskScores.dp.find(dpRow => dpRow.Vehicle_ID === originalRow.Vehicle_ID);
-                            return (
-                              <tr key={index}>
-                                <td>{originalRow.Vehicle_ID}</td>
-                                <td>{originalRow.Risk_Score?.toString()}</td>
-                                {/* Check if dpRow exists and display the DP risk score */}
-                                <td>{dpRow ? dpRow.Risk_Score?.toString() : 'No DP Data'}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="pagination">
-                      <button
-                        onClick={() => handlePageChange(riskCurrentPage - 1, 'risk')}
-                        disabled={riskCurrentPage === 1}
-                      >
-                        Previous
-                      </button>
-                      <span>
-                        Page {riskCurrentPage} of {riskTotalPages}
-                        </span>
-                      <button
-                        onClick={() => handlePageChange(riskCurrentPage + 1, 'risk')}
-                        disabled={riskCurrentPage === riskTotalPages}
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </>
-                )}
-                </div>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="pagination">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1, 'vehicle')}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </button>
+                    <span>
+                      Page {currentPage} of {totalPages}
+                      </span>
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1, 'vehicle')}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p>No data available</p>
+              )}
             </div>
-          )
-        )}
+          )}
+          {/* DP Vehicle Data */}
+          {view === 'dp-vehicle-data' && (
+            <div className="data-display">
+              <h3>Differential Privacy Vehicle Data (Applied Epsilon: 5.0)</h3>
 
-        {/* Static Dashboard Flow Chart and Logs */}
-        {view === "map" && (
-          <div className="flow-log-container">
-            <div className="flow-chart-container">
-              <div className="flow-chart">
-                <label>Static Dashboard Flow</label>
-                <StaticDashboardFlow />
-              </div>
+              {isDpLoading ? (
+                <p>Loading data...</p>
+              ) : dpVehicles.length > 0 ? (
+                <>
+                  <div className="table-container">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Time</th>
+                          <th>Vehicle ID</th>
+                          <th>Speed</th>
+                          <th>Acceleration</th>
+                          <th>Latitude</th>
+                          <th>Longitude</th>
+                          <th>Lane</th>
+                          <th>Headway Distance</th>
+                          <th>Time Gap</th>
+                          <th>Speed Limit</th>
+                          <th>Lane Change</th>
+                          <th>Lane Change Reason</th>
+                          <th>Collision</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dpVehicles.map((vehicle, idx) => (
+                          <tr key={idx} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                            <td>{vehicle.Time}</td>
+                            <td>{vehicle.Vehicle_ID}</td>
+                            <td>{vehicle.Speed}</td>
+                            <td>{vehicle.Acceleration}</td>
+                            <td>{vehicle.Latitude}</td>
+                            <td>{vehicle.Longitude}</td>
+                            <td>{vehicle.Lane}</td>
+                            <td>{vehicle.Headway_Distance}</td>
+                            <td>{vehicle.Time_Gap}</td>
+                            <td>{vehicle.Speed_Limit}</td>
+                            <td>{formatValue(vehicle.Lane_Change)}</td>
+                            <td>{formatValue(vehicle.Lane_Change_Reason)}</td>
+                            <td>{formatValue(vehicle.Collision)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="pagination">
+                    <button
+                      onClick={() => handlePageChange(dpCurrentPage - 1, 'dp')}
+                      disabled={dpCurrentPage === 1}
+                    >
+                      Previous
+                    </button>
+                    <span>
+                      Page {dpCurrentPage} of {dpTotalPages}
+                      </span>
+                    <button
+                      onClick={() => handlePageChange(dpCurrentPage + 1, 'dp')}
+                      disabled={dpCurrentPage === dpTotalPages}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p>No data available</p>
+              )}
             </div>
-            <div className="log-container">
-              <div className="log-list">
-                {/* Display the logs */}
-                {logs.map((log, index) => {
-                  // Check if the log contains 'ERROR'
-                  const logClass = log.includes("ERROR") ? "error" : "success"; // Default to 'success' if not 'ERROR'
+          )}
 
-                  return (
-                    <div key={index} className={`log ${logClass}`}>
-                      {log}
-                    </div>
-                  );
-                })}
+          {/* Risk Score Table */}
+          {view === "risk-scores" && (
+            (riskScores.original || riskScores.dp) && (
+              <div className="risk-scores-display">
+                <h3>Risk Scores (Applied Epsilon: 5.0)</h3>
+                <div className="risk-scores-container">
+                  {/* Check if both original and dp are available */}
+                  {(riskScores.original && riskScores.dp) && (
+                    <>
+                      <div className="risk-score-section">
+                        <h4>Combined Risk Scores</h4>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Vehicle_ID</th>
+                              <th>Original_Risk_Score</th>
+                              <th>DP_Risk_Score</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {riskScores.original.map((originalRow, index) => {
+                              // Look for the corresponding dp row based on Vehicle_ID
+                              const dpRow = riskScores.dp.find(dpRow => dpRow.Vehicle_ID === originalRow.Vehicle_ID);
+                              return (
+                                <tr key={index}>
+                                  <td>{originalRow.Vehicle_ID}</td>
+                                  <td>{originalRow.Risk_Score?.toString()}</td>
+                                  {/* Check if dpRow exists and display the DP risk score */}
+                                  <td>{dpRow ? dpRow.Risk_Score?.toString() : 'No DP Data'}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="pagination">
+                        <button
+                          onClick={() => handlePageChange(riskCurrentPage - 1, 'risk')}
+                          disabled={riskCurrentPage === 1}
+                        >
+                          Previous
+                        </button>
+                        <span>
+                          Page {riskCurrentPage} of {riskTotalPages}
+                          </span>
+                        <button
+                          onClick={() => handlePageChange(riskCurrentPage + 1, 'risk')}
+                          disabled={riskCurrentPage === riskTotalPages}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  </div>
               </div>
+            )
+          )}
+        </div>
+      )}
+
+      {/* Static Dashboard Flow Chart and Logs */}
+      {view === "map" && (
+        <div className="flow-log-container">
+          <div className="flow-chart-container">
+            <label>Static Dashboard Flow</label>
+            <StaticDashboardFlow />
+          </div>
+          <div className="log-container">
+            <div className="log-list">
+              {/* Display the logs */}
+              {logs.map((log, index) => {
+                // Check if the log contains 'ERROR'
+                const logClass = log.includes("ERROR") ? "error" : "success"; // Default to 'success' if not 'ERROR'
+
+                return (
+                  <div key={index} className={`log ${logClass}`}>
+                    {log}
+                  </div>
+                );
+              })}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

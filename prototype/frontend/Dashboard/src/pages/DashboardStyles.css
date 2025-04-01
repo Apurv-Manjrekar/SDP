@@ -2,9 +2,40 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-start;
     padding: 20px;
     gap: 20px;
+    width: 90%;
+    height: 100%;
+    min-height: 80vh;
+  }
+
+  /* Center Map */
+  .map-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* height: 525px;
+    width: 425px; */
+    height: 100%;
+    width: 40%;
+    background: #e0e0e0;
+    padding: 1rem;
+    border-radius: 1vh;
+  }
+  
+  .map-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    /* height: 500px;
+    width: 400px; */
+    height: 100%;
     width: 100%;
+    aspect-ratio: 400 / 500;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
   }
 
   .selection-container {
@@ -13,13 +44,13 @@
     border-radius: 8px;
     background-color: #f9f9f9;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    width: 90%;
-    max-width: 1525px;
+    width: 100%;
+    /* max-width: 1525px; */
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: space-evenly;
-    height: 100%;
+    /* height: 40%; */
   }
 
   .selector {
@@ -32,17 +63,18 @@
 
   .selector label {
     font-weight: bold;
-    font-size: 18px;
+    font-size: 2vh;
     margin-bottom: 10px;
     /* margin-bottom: 8px; */
   }
   
   .selector select {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
+    padding: 1.5vh;
+    border: 0.1vh solid #ccc;
+    border-radius: 10vh;
+    font-size: 1.75vh;
     outline: none;
+    margin-bottom: 0.25vh;  
   }
   
   .selector select:disabled {
@@ -60,21 +92,21 @@
   
   .dp-controls label {
     font-weight: bold;
-    font-size: 18px;
+    font-size: 2vh;
   }
   
   .dp-controls input {
-    margin: 10px 0;
+    margin: 1vh 0;
   }
   
   .dp-controls button {
-    padding: 10px;
+    padding: 1vh;
     background-color: #007bff;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 10vh;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 1.75vh;
     transition: background-color 0.3s ease;
   }
 
@@ -84,8 +116,8 @@
     border-radius: 8px;
     background-color: #f9f9f9;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    width: 90%;
-    max-width: 1525px;
+    width: 100%;
+    /* max-width: 1525px; */
     display: flex;
     flex-direction: column;
   }
@@ -95,9 +127,9 @@
   .table-container {
     overflow-x: auto;
     width: 100%;
-    max-width: 1500px;
+    /* max-width: 1500px; */
     overflow-y: auto;
-    max-height: 500px;
+    max-height: 50vh;
     margin-top: 20px;
     scrollbar-width: thin;
     border: 1px solid #ddd;
@@ -113,12 +145,12 @@
   }
 
   h3 {
-    font-size: 18px;
-    margin-bottom: 10px;
+    font-size: 2vh;
+    margin-bottom: 1vh;
   }
   
   th, td {
-    padding: 10px;
+    padding: 1vh;
     border: 1px solid #ddd;
   }
   
@@ -129,6 +161,11 @@
     position: sticky;
     top: 0;
     z-index: 1;
+    font-size: 1.5vh;
+  }
+  
+  td {
+    font-size: 1.5vh;
   }
   
   tr:nth-child(even) {
@@ -145,15 +182,17 @@
     align-items: center;
     gap: 10px;
     margin-top: 15px;
+    font-size: 1.5vh;
   }
   
   .pagination button {
-    padding: 8px 12px;
-    border: none;
+    padding: 1vh;
+    border: 1vh;
     background: #007bff;
     color: white;
     cursor: pointer;
-    border-radius: 5px;
+    border-radius: 10vh;
+    font-size: 1.5vh;
   }
   
   .pagination button:disabled {
@@ -166,9 +205,13 @@
     display: flex;
     flex-direction: row;
     width: 100%;
-    max-width: 1525px;
+    /* max-width: 1525px; */
     height: 100%;
-    justify-content: space-between;
+    max-height: 50vh;
+    min-height: 40vh;
+    /* max-height: 40%; */
+    justify-content: space-evenly;
+    padding-bottom: 1vh;
     gap: 20px; /* space between flow chart and log containers */
   }
 
@@ -177,49 +220,40 @@
     border: 1px solid #ddd;
     border-radius: 8px;
     width: 50%;
-    max-width: 1525px;
     height: 100%;
-    max-height: 500px;
     background: #f9f9f9;
     display: flex;
     flex-direction: column;
+    align-items: center;  
   }
 
-  .flow-chart {
-    width: 95%;
-    max-width: 1500px;
-    height: 90%;
-    align-self: center;
-    align-items: center;
-  }
-
-  .flow-chart label {
+  .flow-chart-container label {
     font-weight: bold;
-    margin-bottom: 8px;
+    margin-bottom: 1vh;
+    font-size: 2vh;
   }
 
   .log-container {
     width: 50%;
-    max-width: 1525px;
-    max-height: 500px;
+    /* max-height: 40vh; */
     height: 100%;
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* Allows scroll if logs are too long */
+    overflow-y: auto;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 8px;
     background: #fff;
     box-sizing: border-box;
-    max-height: 500px;
+    /* max-height: 500px; */
   }
 
   .log-list {
-    overflow-y: auto;
     flex: 1;
-    padding-right: 5px; /* optional: space for scrollbar */
+    padding-right: 5px;
     text-align: left;
+    font-size: 1.5vh;
   }
 
   .log::before { 
@@ -229,17 +263,15 @@
   }
 
   .log.success {
-    background-color: #e3f9e5; /* soft green */
-    /* color: #4caf50; green text */
+    background-color: #e3f9e5;
     padding: 5px;
     border-radius: 5px;
     margin-bottom: 5px;
   }
 
   .log.error {
-    background-color: #f8d7da; /* soft red */
-    /* color: #dc3545; red text */
+    background-color: #f8d7da;
     padding: 5px;
     border-radius: 5px;
     margin-bottom: 5px;
-  }
+  } 
