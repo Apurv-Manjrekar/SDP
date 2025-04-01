@@ -777,12 +777,14 @@ const DynamicSimulation = () => {
 
         {/* Risk Score Button (only for Risk view) */}
         {view === "simulation-risk-scores" && (
-          <button
-            onClick={calculateRiskScores}
-            disabled={!isDpApplied || isCalculatingRisk}
-          >
-            {isCalculatingRisk ? "Calculating..." : "Calculate Risk Scores"}
-          </button>
+          <div className="risk-controls">
+            <button
+              onClick={calculateRiskScores}
+              disabled={!isDpApplied || isCalculatingRisk}
+            >
+              {isCalculatingRisk ? "Calculating..." : "Calculate Risk Scores"}
+            </button>
+          </div>
         )}
       </div>
 
