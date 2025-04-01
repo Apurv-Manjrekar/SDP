@@ -1,5 +1,5 @@
   .info-container {
-    min-height: 100vh;
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -9,18 +9,18 @@
   }
   
   .info-content {
-    max-width: 1525px;
-    width: 90%;
+    /* max-width: 1525px; */
+    width: 100%;
   }
   
   .info-title {
-    font-size: 2rem;
+    font-size: 3vh;
     font-weight: bold;
     color: #1f2937;
   }
   
   .info-text {
-    font-size: 1.125rem;
+    font-size: 2vh;
     color: #4b5563;
     text-align: left;
     margin: 0 auto;
@@ -30,13 +30,13 @@
   }
   
   .info-subtitle {
-    font-size: 1.5rem;
+    font-size: 2.5vh;
     font-weight: 600;
     color: #374151;
   }
   
   .info-list {
-    font-size: 1.125rem;
+    font-size: 2vh;
     color: #4b5563;
     list-style-type: disc;
     /* padding-left: 20px; */
@@ -47,7 +47,7 @@
   }
   
   .info-link a {
-    font-size: 1.125rem;
+    font-size: 2vh;
     color: #2563eb;
     text-decoration: underline;
   }

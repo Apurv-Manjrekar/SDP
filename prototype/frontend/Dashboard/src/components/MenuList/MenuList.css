@@ -1,31 +1,64 @@
 .menu-list {
-  height: calc(100vh - 80px);
-  max-height: calc(100vh - 80px);
-  padding-bottom: 50px;
-  width: 100%;
-  font-size: 1rem;
+  /* height: calc(100vh - 5vh); */
+  /* max-height: calc(100vh - 5vh); */
+  height: 95%;
+  max-height: 95%;
+  /* width: 15vw; */
   position: relative;
+  /* display: flex;
+  flex-direction: column;
+  justify-content: flex-start; */
+  /* align-items: center/; */
+  /* padding: 0.5vh; */
+  /* background-color: #f3f4f6; */
   background: #e4e4e4;
   overflow-y: auto;
   scrollbar-width: none;
+  /* max-height: 5vh; */
 }
 
 /* Menu item styling */
 .menu-list .ant-menu-item {
-  font-size: 1rem; /* Regular size for main items */
-  margin-bottom: 10px;
-  margin-top: 10px;
+  font-size: 1.75vh; /* Regular size for main items */
+  margin-bottom: 12px;
+  margin-top: 12px;
+}
+
+.menu-list .ant-menu-submenu {
+  margin-bottom: 12px;
+  margin-top: 12px;
 }
 
 /* Sub-menu item styling */
 .menu-list .ant-menu-submenu .ant-menu-item {
-  font-size: 0.875rem; /* Smaller font size for sub-menu items */
-  margin-bottom: 5px;
-  margin-top: 5px;
+  font-size: 1.5vh; /* Smaller font size for sub-menu items */
+  margin-bottom: 8px;
+  margin-top: 8px;
 }
 
 /* Sub-menu title styling */
 .menu-list .ant-menu-submenu-title {
-  margin-bottom: 12px; /* Add space below sub-menu titles */
-  margin-top: 10px;
+  font-size: 1.75vh; /* Regular size for sub-menu titles */
+  margin-bottom: 12px;
+  margin-top: 12px;
+}
+
+/* Adjust icon size */
+.menu-list .ant-menu-item .anticon,
+.menu-list .ant-menu-submenu-title .anticon {
+  font-size: 1.75vh;
+}
+
+/* Reduce size for submenu icons */
+.menu-list .ant-menu-submenu .ant-menu-item .anticon {
+  font-size: 1.5vh;
+}
+
+.menu-list.ant-menu-inline-collapsed .ant-menu-item .anticon,
+.menu-list.ant-menu-inline-collapsed .ant-menu-submenu-title .anticon {
+  font-size: 1.75vh; /* Increase or adjust size as needed */
+}
+
+.submenu-arrow {
+  font-size: 1.75vh !important ;
 }

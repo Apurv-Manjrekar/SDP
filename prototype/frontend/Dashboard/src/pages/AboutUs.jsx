@@ -12,7 +12,7 @@ import "./AboutUs.css"
 const AboutUs = () => {
   return (
     <div className="about-us-container">
-      {/* <h1 className="about-us-title">About Our Team</h1> */}
+      <h1 className="about-us-title">Our Team</h1>
       <p className="about-us-description">
         We are a group of Computer Science seniors at the University of Connecticut 
         passionate about Differential Privacy!

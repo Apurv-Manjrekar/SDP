@@ -1,12 +1,12 @@
 /* About Us Page Styles */
   .about-us-container {
-    max-width: 1200px;
+    width: 90%;
     margin: 0 auto;
     padding: 2rem;
   }
   
   .about-us-title {
-    font-size: 2.5rem;
+    font-size: 3vh;
     font-weight: bold;
     text-align: center;
     margin-bottom: 2rem;
@@ -14,7 +14,7 @@
   }
   
   .about-us-description {
-    font-size: 1.1rem;
+    font-size: 2vh;
     text-align: center;
     color: #666;
     margin-bottom: 3rem;
@@ -23,15 +23,15 @@
   
   .team-grid, .advisors-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(30vw, 1fr));
+    gap: 2vw;
     margin-bottom: 3rem;
   }
   
   .team-card, .advisor-card {
     background: white;
-    border-radius: 10px;
-    padding: 1.5rem;
+    border-radius: 2.5vh;
+    padding: 2.5vh;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
@@ -42,8 +42,8 @@
   }
   
   .image-container {
-    width: 160px;
-    height: 160px;
+    width: 8vw;
+    height: 8vw;
     margin: 0 auto 1rem;
   }
   
@@ -56,7 +56,7 @@
   }
   
   .member-name {
-    font-size: 1.3rem;
+    font-size: 2vh;
     font-weight: 600;
     color: #333;
     margin: 0.5rem 0;
@@ -68,22 +68,23 @@
     font-weight: 500;
     text-align: center;
     margin: 0.5rem 0;
+    font-size: 1.75vh;
   }
   
   .member-description {
     color: #666;
     line-height: 1.5;
-    font-size: 0.95rem;
+    font-size: 1.5vh;
     text-align: center;
   }
   
-  .advisors-title {
-    font-size: 2.5rem;
+  /* .advisors-title {
+    font-size: 2vh;
     font-weight: bold;
     text-align: center;
     margin: 3rem 0 2rem;
     color: #333;
-  }
+  } */
 
   /* Advisors Section */
   .advisors-section {
@@ -94,7 +95,8 @@
   }
   
   .advisors-title {
-    font-size: 2.5rem;
+    font-size: 3vh;
+    font-weight: bold;
     margin-bottom: 2rem;
     color: #333;
   }
@@ -104,7 +106,7 @@
     flex-direction: column;
     align-items: center;
     gap: 2rem;
-    max-width: 800px;
+    max-width: 40vw;
     margin: 0 auto;
   }
   
@@ -118,7 +120,7 @@
   }
   
   .advisor-card h2 {
-    font-size: 1.5rem;
+    font-size: 2vh;
     margin-bottom: 0.5rem;
     color: #222;
   }
@@ -127,6 +129,7 @@
     color: #3b82f6;
     font-weight: 500;
     margin-bottom: 1rem;
+    font-size: 1.75vh;
   }
   
   .advisor-description {
@@ -134,4 +137,5 @@
     line-height: 1.6;
     text-align: left;
     margin-top: 1rem;
+    font-size: 1.5vh;
   }

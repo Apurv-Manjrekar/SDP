@@ -2,7 +2,7 @@ import React from "react";
 import { Menu } from "antd";
 import { HomeOutlined, DatabaseOutlined, LineChartOutlined, InfoCircleOutlined, TeamOutlined, DotChartOutlined,
   WarningOutlined, DashboardOutlined, ControlOutlined, CompassOutlined, CloudServerOutlined, QuestionCircleOutlined, 
-  BulbOutlined
+  BulbOutlined, ArrowDownOutlined
  } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import "./MenuList.css";
