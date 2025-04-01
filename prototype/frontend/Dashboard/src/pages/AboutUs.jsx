@@ -31,7 +31,7 @@ const AboutUs = () => {
           <h2 className="member-name">Apurv Manjrekar</h2>
           <p className="member-role">Team Lead & Developer</p>
           <p className="member-description">
-            Oversees project direction and coordinates team efforts while contributing to core development.
+            Oversees project direction and coordinates team efforts while contributing to core development. Plans to work as a Data Engineer at Travelers after graduation.
           </p>
         </div>
 
@@ -47,7 +47,7 @@ const AboutUs = () => {
           <h2 className="member-name">Sai Akavaramu</h2>
           <p className="member-role">Developer & Co-Lead</p>
           <p className="member-description">
-            Leads data processing implementation and ensures code quality across the project.
+            Leads data processing implementation and coordinates project timelines to ensure on-time delivery. After graduation, will join Bank of America as a Software Engineer.
           </p>
         </div>
 
@@ -63,7 +63,7 @@ const AboutUs = () => {
           <h2 className="member-name">Vanshika Gupta</h2>
           <p className="member-role">Developer & Researcher</p>
           <p className="member-description">
-            Implements key frontend features and conducts research to inform our technical approach.
+            Implements key frontend features and conducts research to inform our technical approach. Plans to study a Masters in Computer Science after a gap year.
           </p>
         </div>
 
@@ -79,7 +79,7 @@ const AboutUs = () => {
           <h2 className="member-name">Ishana Mokashi</h2>
           <p className="member-role">Developer & Researcher</p>
           <p className="member-description">
-            Focuses on algorithm development and performance optimization.
+            Focuses on differential privacy implementation and performance optimization. After graduation, plans to work as a Business Analyst at Journey Blazers.
           </p>
         </div>
 
@@ -95,7 +95,7 @@ const AboutUs = () => {
           <h2 className="member-name">Peiqi Li</h2>
           <p className="member-role">Developer & Researcher</p>
           <p className="member-description">
-            Specializes in user interface implementation.
+            Specializes in frontend development and UI implementation. Plans to study AI applications for game design post graduation.
           </p>
         </div>
 
@@ -111,7 +111,7 @@ const AboutUs = () => {
           <h2 className="member-name">Amin Sheikh</h2>
           <p className="member-role">Data Engineer & Project Manager</p>
           <p className="member-description">
-            Manages project timelines and implemented risk score analysis.
+            Implements risk score analysis into workflow pipeline. After graduation, plans to work as a Data Analyst at AT&T.
           </p>
         </div>
       </div>
