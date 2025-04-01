@@ -1,13 +1,20 @@
 import React from "react";
-import "./Info.css";
+import "./Info.css"; // Import styles for the component
 
+// Component to explain Differential Privacy
 const WhatIsDifferentialPrivacy = () => {
   return (
     <div className="info-container">
       <div className="info-content">
-        {/* <h1 style={{ fontSize: "2rem", textAlign: "center" }}>
+        {/* Main content about Differential Privacy */}
+
+        {/* Heading (commented out) 
+        <h1 style={{ fontSize: "2rem", textAlign: "center" }}>
           What is Differential Privacy?
-        </h1> */}
+        </h1> 
+        */}
+
+        {/* Introduction paragraph explaining Differential Privacy */}
         <p className="info-text">
           Differential Privacy is a powerful technique used to protect personal
           data while still enabling meaningful insights from datasets. It works by
@@ -19,6 +26,7 @@ const WhatIsDifferentialPrivacy = () => {
           data-driven decisions without compromising individual privacy.
         </p>
 
+        {/* Example section */}
         <h2 className="info-subtitle">An Example</h2>
         <p className="info-text">
           A well-known example of this in action is <strong>Apple</strong>, which
@@ -34,6 +42,7 @@ const WhatIsDifferentialPrivacy = () => {
           clear while keeping individual identities hidden.
         </p>
 
+        {/* Key features section */}
         <h2 className="info-subtitle">Key Features</h2>
         <ul className="info-list" style={{ position: "relative", left: "22.5%" }}>
           <li>Ensures individual privacy while providing useful insights.</li>
@@ -41,6 +50,7 @@ const WhatIsDifferentialPrivacy = () => {
           <li>Prevents attackers from inferring private information.</li>
         </ul>
 
+        {/* Applications section */}
         <h2 className="info-subtitle">Applications</h2>
         <p className="info-text">
           Differential Privacy is used in industries like healthcare, finance, and
@@ -53,4 +63,4 @@ const WhatIsDifferentialPrivacy = () => {
   );
 };
 
-export default WhatIsDifferentialPrivacy;
+export default WhatIsDifferentialPrivacy; // Export the component for use in other files
