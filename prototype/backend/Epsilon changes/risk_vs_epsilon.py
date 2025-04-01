@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import os
 import argparse
 
+#Compute average risk scores for different epsilon values
 def compute_average_risk(epsilon_values, input_dir):
     avg_risk_scores = {}
     
@@ -16,6 +17,7 @@ def compute_average_risk(epsilon_values, input_dir):
     
     return avg_risk_scores
 
+#Plot the average risk scores against epsilon values
 def plot_risk_scores(avg_risk_scores, output_dir):
     epsilons = list(avg_risk_scores.keys())
     avg_scores = list(avg_risk_scores.values())

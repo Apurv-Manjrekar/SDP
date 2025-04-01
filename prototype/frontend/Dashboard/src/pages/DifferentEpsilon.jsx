@@ -44,7 +44,7 @@ export default function DataViewer() {
       <div className="selection-container">
         <div className="selector">
           <label>
-            Select Epsilon:
+            Select an Epsilon Value:
           </label>
           <select
             id="epsilon-select"
