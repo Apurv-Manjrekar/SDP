@@ -53,7 +53,7 @@ const App = () => {
 
   return (
     <Layout>
-      <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)} className="sidebar" width={'250px'} trigger={null}>
+      <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)} className="sidebar" width={'15vw'} trigger={null} collapsedWidth={'5vw'}>
         <div className="logo-container">
         <Logo collapsed={collapsed} />
         </div>

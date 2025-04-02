@@ -575,7 +575,7 @@ const DynamicSimulation = () => {
       if (route && route.length > 1) {
         try {
           const bounds = L.latLngBounds(route);
-          map.fitBounds(bounds, { padding: [50, 50] });
+          map.fitBounds(bounds, { padding: [5, 5] });
           console.log("Fitting map to bounds:", bounds);
         } catch (err) {
           console.error("Error fitting bounds:", err);
@@ -594,15 +594,16 @@ const DynamicSimulation = () => {
         {view === "run-simulation" && (
           <div className="map-wrapper">
             <div className="map-container">
-            <MapContainer
-              center={[(sumoBounds[0][0] + sumoBounds[1][0])/2, (sumoBounds[0][1] + sumoBounds[1][1])/2]}
-              zoom={13}
-              maxBounds={sumoBounds}
-              maxBoundsViscosity={1.0} // Prevent dragging outside
-              scrollWheelZoom={false}
-              doubleClickZoom={false}
-              style={{ height: "100%", width: "100%" }}
-            >
+              <MapContainer
+                className="map"
+                center={[(sumoBounds[0][0] + sumoBounds[1][0])/2, (sumoBounds[0][1] + sumoBounds[1][1])/2]}
+                zoom={13}
+                maxBounds={sumoBounds}
+                maxBoundsViscosity={1.0} // Prevent dragging outside
+                scrollWheelZoom={false}
+                doubleClickZoom={false}
+                style={{ height: "100%", width: "100%" }}
+              >
                 <TileLayer 
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
                 />
@@ -610,7 +611,7 @@ const DynamicSimulation = () => {
                 <MapClickHandler />
                 <Rectangle
                   bounds={sumoBounds}
-                  pathOptions={{ color: 'black', weight: 1, fillOpacity: 0 }}
+                  pathOptions={{ color: 'black', weight: 2, fillOpacity: 0 }}
                 />
                 {startPoint && (
                   <Marker position={startPoint}>
@@ -641,7 +642,7 @@ const DynamicSimulation = () => {
                         opacity={0.5}
                       >
                         <Tooltip direction="top" offset={[0, -5]} opacity={1}>
-                          <div style={{ fontSize: "0.75rem" }}>
+                          <div style={{ fontSize: "2vh" }}>
                             <strong>Original:</strong>
                             <div>Speed: {point.original.speed ?? "N/A"} km/h</div>
                             <div>Acceleration: {point.original.acceleration ?? "N/A"} m/s²</div>
@@ -668,9 +669,9 @@ const DynamicSimulation = () => {
         )}
         {/* Simulation Form */}
         {view === "run-simulation" && (
-          <div className="simulation-form">
+          <div className="simulation-form-container">
             <h2>Run Simulation</h2>
-            <form onSubmit={handleSubmit}>
+            <form className="simulation-form" onSubmit={handleSubmit}>
               <div>
                 <label>
                   Start Point:
@@ -776,17 +777,19 @@ const DynamicSimulation = () => {
 
         {/* Risk Score Button (only for Risk view) */}
         {view === "simulation-risk-scores" && (
-          <button
-            onClick={calculateRiskScores}
-            disabled={!isDpApplied || isCalculatingRisk}
-          >
-            {isCalculatingRisk ? "Calculating..." : "Calculate Risk Scores"}
-          </button>
+          <div className="risk-controls">
+            <button
+              onClick={calculateRiskScores}
+              disabled={!isDpApplied || isCalculatingRisk}
+            >
+              {isCalculatingRisk ? "Calculating..." : "Calculate Risk Scores"}
+            </button>
+          </div>
         )}
       </div>
 
       {/* Vehicle Data Section */}
-      {selectedVehicle && (
+      {view !== "run-simulation" && selectedVehicle && selectedVehicle !== "Create New Vehicle" && (
         <div className="data-container">
       
           {/* Display Original Data */}
@@ -983,10 +986,8 @@ const DynamicSimulation = () => {
       {view === "run-simulation" && (
         <div className="flow-log-container">
           <div className="flow-chart-container">
-            <div className="flow-chart">
               <label>Simulation Flow</label>
-              <SimulationFlow />
-            </div>
+              <SimulationFlow/>
           </div>
           <div className="log-container">
             <div className="log-list">
