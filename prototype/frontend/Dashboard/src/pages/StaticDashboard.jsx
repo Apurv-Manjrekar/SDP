@@ -7,6 +7,8 @@ import L from "leaflet";
 import "./StaticDashboard.css";
 import "./DashboardStyles.css";
 import StaticDashboardFlow from '../components/StaticDashboardFlow/StaticDashboardFlow';
+import VehicleDataHeatmap from '../assets/vehicle_data_heatmap.png';
+import DpVehicleDataHeatmap from '../assets/dp_vehicle_data_heatmap.png';
 
 
 
@@ -556,7 +558,7 @@ const StaticDashboard = () => {
         <span className="block sm:inline">{error}</span>
       </div>}
       {view === "map" && (
-        <div className="static-map">
+        <div className="static-maps-container">
           <div className="map-wrapper">
             <div className="map-container">
             <MapContainer
@@ -688,6 +690,20 @@ const StaticDashboard = () => {
           </select>
         </div>
       </div>
+            
+      {/* Heatmaps Section */}
+      {view === "risk-scores" && (
+        <div className="heatmaps-container">
+          <div className="heatmap">
+            <h2>Vehicle Data Heatmap</h2>
+            <img src={VehicleDataHeatmap} alt="Vehicle Data Heatmap" />
+          </div>
+          <div className="heatmap">
+            <h2>DP Vehicle Data Heatmap</h2>
+            <img src={DpVehicleDataHeatmap} alt="DP Vehicle Data Heatmap" />
+          </div>
+        </div>
+      )}
 
       
       {/* Vehicle Data Section */}
@@ -842,14 +858,14 @@ const StaticDashboard = () => {
           {/* Risk Score Table */}
           {view === "risk-scores" && (
             (riskScores.original || riskScores.dp) && (
-              <div className="risk-scores-display">
+              <div className="data-display">
                 <h3>Risk Scores (Applied Epsilon: 5.0)</h3>
-                <div className="risk-scores-container">
+                {/* <div className=""> */}
                   {/* Check if both original and dp are available */}
                   {(riskScores.original && riskScores.dp) && (
                     <>
-                      <div className="risk-score-section">
-                        <h4>Combined Risk Scores</h4>
+                      <div className="table-container">
+                        {/* <h4>Combined Risk Scores</h4> */}
                         <table>
                           <thead>
                             <tr>
@@ -894,7 +910,7 @@ const StaticDashboard = () => {
                     </>
                   )}
                   </div>
-              </div>
+              // </div>
             )
           )}
         </div>

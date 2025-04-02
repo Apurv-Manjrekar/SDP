@@ -74,4 +74,16 @@
     background: #ccc;
     cursor: not-allowed;
   }
+
+  .risk-controls button {
+    margin-top: 10px;
+    padding: 1.5vh;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 10vh;
+    font-size: 2vh;
+  }
   
