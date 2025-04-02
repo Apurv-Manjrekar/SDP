@@ -29,7 +29,7 @@ plt.plot(sampled_data.index, sampled_data["Risk_Score_DP"], label="With Differen
 plt.xlabel("Vehicle ID")
 plt.ylabel("Risk Score")
 plt.title("Risk Scores With and Without Differential Privacy")
-plt.xticks([])  # Remove x-axis labels
+plt.xticks([])  
 plt.legend()
 plt.grid(True)
 
