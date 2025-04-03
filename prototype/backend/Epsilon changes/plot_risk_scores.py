@@ -13,15 +13,15 @@ non_dp_data = pd.read_csv(non_dp_file)
 merged_data = pd.merge(non_dp_data, dp_data, on="Vehicle_ID", suffixes=("_NonDP", "_DP"))
 
 # Filter based on Vehicle_ID prefix
-motorcycles = merged_data[merged_data["Vehicle_ID"].str.startswith("motorcycle")].sample(n=50, random_state=42)
-trucks = merged_data[merged_data["Vehicle_ID"].str.startswith("truck")].sample(n=50, random_state=42)
-vehicles = merged_data[merged_data["Vehicle_ID"].str.startswith("veh")].sample(n=50, random_state=42)
+motorcycles = merged_data[merged_data["Vehicle_ID"].str.startswith("motorcycle")].sample(n=4, random_state=42)
+trucks = merged_data[merged_data["Vehicle_ID"].str.startswith("truck")].sample(n=12, random_state=42)
+vehicles = merged_data[merged_data["Vehicle_ID"].str.startswith("veh")].sample(n=80, random_state=42)
 
 # Combine selected samples and sort by Vehicle_ID
-sampled_data = pd.concat([motorcycles, trucks, vehicles]).sort_values(by="Vehicle_ID")
+sampled_data = pd.concat([motorcycles, trucks, vehicles]).sort_values(by="Vehicle_ID").reset_index(drop=True)
 
 # Plot
-plt.figure(figsize=(12, 6))
+plt.figure(figsize=(16, 8))
 plt.plot(sampled_data.index, sampled_data["Risk_Score_NonDP"], label="Without Differential Privacy", marker='o', linestyle='-')
 plt.plot(sampled_data.index, sampled_data["Risk_Score_DP"], label="With Differential Privacy", marker='s', linestyle='-')
 

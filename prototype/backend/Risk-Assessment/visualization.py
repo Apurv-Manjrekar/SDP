@@ -26,11 +26,11 @@ def visualize_risk(file_path):
     # risk_scores_df = pd.read_csv(file_path.replace(".csv", "_risk_scores.csv"))
     # df = df.merge(risk_scores_df, on="Vehicle_ID")
 
-    print("Sampling Data...")
-    veh_ids = df[df['Vehicle_ID'].str.startswith('veh')]['Vehicle_ID'].drop_duplicates().sample(n=800, random_state=42)
-    motorcycle_ids = df[df['Vehicle_ID'].str.startswith('motorcycle')]['Vehicle_ID'].drop_duplicates().sample(n=40, random_state=42)
-    truck_ids = df[df['Vehicle_ID'].str.startswith('truck')]['Vehicle_ID'].drop_duplicates().sample(n=120, random_state=42)
-    df = df[df['Vehicle_ID'].isin(veh_ids) | df['Vehicle_ID'].isin(motorcycle_ids) | df['Vehicle_ID'].isin(truck_ids)]
+    # print("Sampling Data...")
+    # veh_ids = df[df['Vehicle_ID'].str.startswith('veh')]['Vehicle_ID'].drop_duplicates().sample(n=800, random_state=42)
+    # motorcycle_ids = df[df['Vehicle_ID'].str.startswith('motorcycle')]['Vehicle_ID'].drop_duplicates().sample(n=40, random_state=42)
+    # truck_ids = df[df['Vehicle_ID'].str.startswith('truck')]['Vehicle_ID'].drop_duplicates().sample(n=120, random_state=42)
+    # df = df[df['Vehicle_ID'].isin(veh_ids) | df['Vehicle_ID'].isin(motorcycle_ids) | df['Vehicle_ID'].isin(truck_ids)]
 
     WEIGHTS = {
         "speeding": 2.0,
@@ -77,7 +77,7 @@ def visualize_risk(file_path):
 
     HeatMap(heatmap_data, min_opacity=0.2, radius=15, blur=10).add_to(risk_map)
 
-    risk_map.save(f"{os.path.basename(file_path.replace('.csv', ''))}_risk_heatmap_.html")
+    risk_map.save(f"{os.path.basename(file_path.replace('.csv', ''))}_risk_heatmap.html")
 
     print(f"Min Risk Score: {road_risk_scores['Avg_Risk_Score'].min()}, Max Risk Score: {road_risk_scores['Avg_Risk_Score'].max()}, Avg Risk Score: {road_risk_scores['Avg_Risk_Score'].mean()}")
     print(f"Min Latitude : {road_risk_scores['Latitude'].min()}, Max Latitude: {road_risk_scores['Latitude'].max()}, Avg Latitude: {road_risk_scores['Latitude'].mean()}")
