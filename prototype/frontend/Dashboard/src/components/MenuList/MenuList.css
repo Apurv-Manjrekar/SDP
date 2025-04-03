@@ -1,8 +1,8 @@
 .menu-list {
-  /* height: calc(100vh - 5vh); */
-  /* max-height: calc(100vh - 5vh); */
-  height: 95%;
-  max-height: 95%;
+  height: calc(100vh - 10vh);
+  max-height: calc(100vh - 10vh);
+  /* height: 95%;
+  max-height: 95%; */
   /* width: 15vw; */
   position: relative;
   /* display: flex;
@@ -14,6 +14,7 @@
   background: #e4e4e4;
   overflow-y: auto;
   scrollbar-width: none;
+  padding-bottom: 5vh;
   /* max-height: 5vh; */
 }
 

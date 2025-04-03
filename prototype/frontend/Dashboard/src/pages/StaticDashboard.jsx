@@ -7,8 +7,8 @@ import L from "leaflet";
 import "./StaticDashboard.css";
 import "./DashboardStyles.css";
 import StaticDashboardFlow from '../components/StaticDashboardFlow/StaticDashboardFlow';
-import VehicleDataHeatmap from '../assets/vehicle_data_heatmap.png';
-import DpVehicleDataHeatmap from '../assets/dp_vehicle_data_heatmap.png';
+import VehicleDataHeatmap from '../assets/vehicle_data_risk_heatmap.png';
+import DpVehicleDataHeatmap from '../assets/dp_vehicle_data_risk_heatmap.png';
 
 
 
