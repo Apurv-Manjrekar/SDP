@@ -19,7 +19,7 @@ def compute_average_risk(epsilon_values, input_dir):
 
 #Plot the average risk scores against epsilon values
 def plot_risk_scores(avg_risk_scores, output_dir):
-    epsilons = list(avg_risk_scores.keys())
+    epsilons = sorted([float(e) for e in avg_risk_scores.keys()])
     avg_scores = list(avg_risk_scores.values())
     
     plt.figure(figsize=(8, 5))
