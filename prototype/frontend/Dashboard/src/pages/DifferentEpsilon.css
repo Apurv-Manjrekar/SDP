@@ -1,17 +1,19 @@
   .graph-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    max-width: 70%;
+    justify-content: center;
+    max-width: 100%;
     max-height: auto;
-    width: 40vw;
+    width: 80vw;
     height: auto;
     background: #e0e0e0;
     padding: 1vh;
     border-radius: 1vh;
+    gap: 0.75vh;
   }
   
   .graph-container img {
-    width: 100%;
+    width: 50%;
     height: 100%;
   }

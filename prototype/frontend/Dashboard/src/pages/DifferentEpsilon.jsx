@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import "./DashboardStyles.css";
-import "./DifferentEpsilon.css";
+import "./DifferentEpsilon.css"
+import RiskScoresPlot from "../assets/risk_scores_plot.png";
+import RiskVsEpsilon from "../assets/risk_vs_epsilon.png";
 
 const epsilonValues = [0.01, 0.1, 0.5, 1, 2, 5, 7, 10];
 
@@ -29,8 +31,14 @@ export default function DataViewer() {
       {/* Image Section */}
       <div className="graph-container">  {/* Increased margin-bottom for more space */}
           <img
-            src="http://localhost:8000/images/risk_vs_epsilon.png"
+            src={RiskVsEpsilon}
             alt="Risk vs Epsilon Graph"
+            // style={{ width: '80%' }}
+            // className="mx-auto border rounded-lg shadow-md"
+          />
+          <img 
+            src={RiskScoresPlot}
+            alt="Risk Scores Plot"
             // style={{ width: '80%' }}
             // className="mx-auto border rounded-lg shadow-md"
           />
