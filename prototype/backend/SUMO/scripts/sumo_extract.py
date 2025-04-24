@@ -30,6 +30,7 @@ def extract_network_info(net_file, is_gz=True):
     """
     Extracts network offsets and projection from a SUMO network file.
     """
+    # Check if the file is compressed
     if is_gz:
         with gzip.open(net_file, 'rt', encoding='utf-8') as f:
             tree = ET.parse(f)
@@ -38,12 +39,13 @@ def extract_network_info(net_file, is_gz=True):
         tree = ET.parse(net_file)
         root = tree.getroot()
 
+    # Check if the file contains a <location> tag
     location = root.find("location")
     if location is None:
         raise ValueError("No <location> tag found in the network file.")
 
+    # Extract network offsets and projection
     net_offset_x, net_offset_y = map(float, location.get("netOffset").split(','))
-    # min_lon, min_lat, max_lon, max_lat = map(float, location.get("origBoundary").split(','))
     proj_parameter = location.get("projParameter")
     
     return net_offset_x, net_offset_y, proj_parameter
@@ -81,19 +83,20 @@ def get_nearest_edge(lat, lon, net_file, net_offset_x, net_offset_y, proj_string
     """
     Finds the nearest edge to a given latitude and longitude.
     """
+    # Read the SUMO network
     net_data = net.readNet(net_file)
-
-    # net_offset_x, net_offset_y, proj_string = extract_network_info(net_file)
-
+    # Convert latitude and longitude to SUMO coordinates
     x, y = latlon_to_sumo(lat, lon, net_offset_x, net_offset_y, proj_string)
 
     print(f"Converted ({lat}, {lon}) -> SUMO ({x}, {y})")
-
+    
+    # Find the nearest edge
     edges = net_data.getNeighboringEdges(x, y, 1609)
     if not edges:
         print("No edges found nearby.")
         return None
     
+    # Get the ID of the nearest edge
     nearest_edge = min(edges, key=lambda edge: edge[1])[0]
 
     print(f"Nearest edge: {nearest_edge.getID()}")
@@ -105,9 +108,11 @@ def extract_lane_change_data(lane_change_file):
     """
     Extracts lane change data from a SUMO lane change output file.
     """
+    # Parse the XML file
     tree = ET.parse(lane_change_file)
     root = tree.getroot()
 
+    # Extract the lane change data
     lane_changes = []
     for lane_change in root.findall("change"):
         time = float(lane_change.get("time"))
@@ -132,9 +137,11 @@ def extract_collision_data(collision_file):
     """
     Extracts collision data from a SUMO collision output file.
     """
+    # Parse the XML file
     tree = ET.parse(collision_file)
     root = tree.getroot()
 
+    # Extract the collision data
     collisions = []
     for collision in root.findall("collision"):
         time = float(collision.get("time"))
@@ -154,8 +161,10 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
     """
     Runs the SUMO simulation and extracts vehicle metrics.
     """
+    # Extract network info
     net_offset_x, net_offset_y, proj_string = extract_network_info(net_path)
-
+    
+    # Start the SUMO simulation
     traci.start(["sumo", "-c", sumo_cfg, "--start", "--delay", "10", 
                  "--threads", "16",
                 # "--device.rerouting.probability", "0", "--device.emissions.probability", "0", 
@@ -170,12 +179,14 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
                 # "--ignore-route-errors", "--no-warnings", "--no-step-log"
                 ],
                 # traceFile="trace.xml",
-                ) # python SUMO
+                )
 
+    # Load the saved state if provided
     if state_file != "None" and os.path.exists(state_file):
         print(f"Loading saved state from {state_file}")
         traci.simulation.loadState(state_file)
 
+    # Add dynamic vehicle if requested
     if dynamic:
         print(f"LOG: Adding dynamic vehicle {vehicle_type} from {start_point} to {end_point} with behvaior {vehicle_behavior}.")
         nearest_start_edge = get_nearest_edge(start_point[0], start_point[1], net_path, net_offset_x, net_offset_y, proj_string)
@@ -184,12 +195,14 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
         vehicles = [dynamic_vehicle_id]
         print(f"LOG: Dynamic vehicle ID: {dynamic_vehicle_id}")
 
+    # Create variables to keep track of progress
     data_rows = []
     chunk_counter = 0
     if vehicles != None:
         vehicles_remaining = set(vehicles)
         vehicles_in_progress = set()
 
+    # Run the simulation, iterating over each step
     # while traci.simulation.getMinExpectedNumber() > 0: # until all vehicles have left the network
     for step in range(simulation_time): # run for SIMULATION_TIME seconds
         traci.simulationStep()
@@ -201,6 +214,7 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
         if vehicles != None:
             vehicle_ids = [v for v in vehicle_ids if v in vehicles_remaining]
 
+        # Extract vehicle metrics
         for vehicle_id in vehicle_ids:
             try:
                 speed = traci.vehicle.getSpeed(vehicle_id)
@@ -233,6 +247,7 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
                 'Speed_Limit': speed_limit
             })
 
+        # Save state and chunk data
         if vehicles == None and step % save_interval == 0 and step != 0:
             traci.simulation.saveState(output_path.replace('.csv', '_state_file.xml'))
             print(f"Simulation state saved at step {step}")
@@ -242,6 +257,7 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
             df_chunk.to_csv(output_chunk_path, index=False, mode='w', header=chunk_counter == 1)
             data_rows.clear()      
 
+        # Check if all vehicles have left the network
         if vehicles != None:
             for vehicle_id in vehicles_in_progress.copy():
                 if vehicle_id not in vehicle_ids:
@@ -258,8 +274,9 @@ def simulate_and_extract_metrics(sumo_cfg, net_path, output_path, simulation_tim
                 print("LOG: All vehicles have left the network.")
                 break
 
-    traci.close() # not needed for libsumo
+    traci.close()
 
+    # Save last chunk
     if vehicles == None and data_rows:
         df_chunk = pd.DataFrame(data_rows)
         output_chunk_path = f"{output_path.replace('.csv', '')}_chunk_{chunk_counter + 1}.csv"
@@ -275,22 +292,20 @@ def merge_additional_data(vehicle_data, lane_change_data, collision_data):
     """
     Merges lane change and collision data with real-time vehicle data.
     """
+    # Merge lane change data
     if lane_change_data.empty:
         print("No lane change data found!")
         merged_data = vehicle_data
         merged_data['Lane_Change'] = False
         merged_data['Lane_Change_Reason'] = 'None'
-        # merged_data['From_Lane'] = 'None'
-        # merged_data['To_Lane'] = 'None'
     else:
         print("Merging Lane Change Data!")
         merged_data = pd.merge(vehicle_data, lane_change_data, how='left', on=['Time', 'Vehicle_ID'])
         merged_data['Lane_Change_Reason'] = merged_data['Lane_Change_Reason'].fillna('None')
         merged_data['Lane_Change'] = merged_data['From_Lane'].notna()
         merged_data = merged_data.drop(['From_Lane', 'To_Lane'], axis=1)
-        # merged_data['From_Lane'] = merged_data['From_Lane'].fillna('None')
-        # merged_data['To_Lane'] = merged_data['To_Lane'].fillna('None')
     
+    # Merge collision data
     if collision_data.empty:
         print("No collision data found!")
         merged_data['Collision'] = False
@@ -301,17 +316,19 @@ def merge_additional_data(vehicle_data, lane_change_data, collision_data):
     
     return merged_data
 
-
 def add_vehicle(start, end, vehicle_type, vehicle_behavior):
     """
     Adds a vehicle to the simulation.
     """
+    # Get the route ID
     route_id = f"route_{start}_{end}"
     if route_id not in traci.route.getIDList():
         traci.route.add(route_id, [start, end])
     
+    # Get the vehicle ID and type
     vehicle_id = f"{vehicle_type}_{time.time()}"
     typeID = f"{vehicle_type}_{vehicle_behavior}" if vehicle_behavior != "" else vehicle_type
+    # Add the vehicle
     traci.vehicle.add(vehicle_id, route_id, typeID=typeID, departLane="best", departSpeed="avg", departPos="last")
     
     return vehicle_id
@@ -346,6 +363,7 @@ def merge_output_chunks_and_save(output_path):
 
 ### ------------------------------ MAIN ------------------------------ ###
 if __name__ == "__main__":
+    # Parse command line arguments
     parser = argparse.ArgumentParser(description="Run SUMO simulation and extract vehicle data.")
     parser.add_argument("--dynamic", type=bool, default=False, help="Whether to use user-defined vehicle data.")
     parser.add_argument("--start_point", type=str, default="None", help="Starting point of the route.")
@@ -358,10 +376,10 @@ if __name__ == "__main__":
     dynamic = args.dynamic
     state_file = args.state_file
 
+    # Set default values
     if dynamic:
         start_point = ast.literal_eval(args.start_point)
         end_point = ast.literal_eval(args.end_point)
-        # print(f"Parsed start_point: {start_point}, end_point: {end_point}")
 
         vehicle_type = args.vehicle_type
         vehicle_behavior = args.behavior
@@ -372,6 +390,7 @@ if __name__ == "__main__":
         vehicle_type = "veh_passenger"
         vehicle_behavior = ""
 
+    # Get relevant paths
     curr_dir_path = os.path.dirname(os.path.realpath(__file__))
     # ./../configs/
     MAP = "medium_map"
@@ -388,23 +407,7 @@ if __name__ == "__main__":
     lanechange_path = os.path.join(results_dir_path, lanechange_file)
     collision_path = os.path.join(results_dir_path, collision_file)
 
-    # net_offset_x, net_offset_y, proj_string = extract_network_info(net_path)
-
-    # lat, lon = sumo_to_latlon(9266, 12059, net_offset_x, net_offset_y, proj_string)
-    # print(f"Converted SUMO (4671, 16873) -> ({lat}, {lon})")
-    # 41.8883055530023, -72.55550729559022
-
-    # x, y = latlon_to_sumo(41.798816451975156, -72.68769058609026, net_offset_x, net_offset_y, proj_string)
-    # print(f"Converted ({41.79516821988085}, {-72.73704528808595}) -> SUMO ({x}, {y})")
-    # # [41.79516821988085, -72.73704528808595]_[41.737807947144255, -72.6573944091797].csv
-    # lat, lon = sumo_to_latlon(17580, 10000, net_offset_x, net_offset_y, proj_string)
-    # print(f"Converted SUMO (17580, 10000) -> ({lat}, {lon})")
-    # 41.88794303868078, -72.55550729559022
-
-    # x, y = latlon_to_sumo(41.737807947144255, -72.6573944091797, net_offset_x, net_offset_y, proj_string)
-    # print(f"Converted ({41.737807947144255}, {-72.6573944091797}) -> SUMO ({x}, {y})")
-
-
+    # Set output path
     vehicles = None
     if dynamic:
         if vehicle_behavior == "":
@@ -416,14 +419,17 @@ if __name__ == "__main__":
         output_path = os.path.join(results_dir_path, "vehicle_data.csv")
     else:
         output_path = os.path.join(results_dir_path, "vehicle_data_" + str(vehicles) + ".csv")
-
+    
+    # Run simulation
     vehicle_data = simulate_and_extract_metrics(sumocfg_path, net_path, output_path, simulation_time=2100, vehicles=vehicles, 
                                                 dynamic=dynamic, start_point=start_point, end_point=end_point, vehicle_type=vehicle_type, 
                                                 vehicle_behavior=vehicle_behavior, state_file=state_file)
 
+    # Extract lane change and collision data
     lanechange_data = extract_lane_change_data(lanechange_path)
     collision_data = extract_collision_data(collision_path)
 
+    # Merge lane change and collision data
     if not dynamic and vehicles == None:
         output_dir = os.path.dirname(output_path)
         base_filename = os.path.basename(output_path).replace(".csv", "")
@@ -446,4 +452,3 @@ if __name__ == "__main__":
         vehicle_data.to_csv(output_path, index=False)
 
     print(f"Vehicle data saved to {output_path}!")
-    # print(vehicle_data.head())
