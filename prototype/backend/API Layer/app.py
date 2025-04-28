@@ -710,7 +710,7 @@ def get_risk_score():
             file = matching_files[0]
             match = re.search(r'_epsilon_([\d\.]+)', file)
             if match:
-                epsilon = float(match.group(1)[:-1])   # Extract the epsilon value (digit)
+                epsilon = float(match.group(1))   # Extract the epsilon value (digit)
                 logging.info(f"Found file: {file}, epsilon set to: {epsilon}")
             else:
                 logging.info("No valid epsilon value found in the filename.")
