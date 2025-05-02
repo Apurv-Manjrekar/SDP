@@ -20,7 +20,7 @@ const DynamicSimulation = () => {
   const [successMessage, setSuccessMessage] = useState("");
 
   const [vehicleList, setVehicleList] = useState([]);
-  const [selectedVehicle, setSelectedVehicle] = useState("");
+  const [selectedVehicle, setSelectedVehicle] = useState("Create New Vehicle");
   const [vehicleData, setVehicleData] = useState([]);
   const [dpVehicleData, setDpVehicleData] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
