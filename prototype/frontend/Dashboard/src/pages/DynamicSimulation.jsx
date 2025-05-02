@@ -62,6 +62,11 @@ const DynamicSimulation = () => {
     fetchVehicleList();
   }, [successMessage]);
 
+  useEffect(() => {
+    setError("");
+    setSuccessMessage("");
+  }, [view]);
+
   const fetchVehicleList = async () => {
     try {
       const functionRoute = "http://localhost:8000/dynamic-vehicle-list";
@@ -91,6 +96,8 @@ const DynamicSimulation = () => {
 
   useEffect(() => {
     if (selectedVehicle === "Create New Vehicle") {
+      setError("");
+      setSuccessMessage("");
       setStartPoint("");
       setEndPoint("");
       setVehicleType("car"); // Default to 'car'
@@ -103,6 +110,8 @@ const DynamicSimulation = () => {
       setRiskScores({ original: null, dp: null });
     }
     else if (selectedVehicle) {
+      setError("");
+      setSuccessMessage("");
       fetchVehicleData();
       fetchVechicleRoute();
       setDpVehicleRoute([]);
@@ -366,7 +375,8 @@ const DynamicSimulation = () => {
         setIsDpApplied(true);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to apply differential privacy.");
+        console.error("Failed to apply differential privacy:", errorData.error);
+        setError("Failed to apply differential privacy.");
       }
     } catch (err) {
       setError("Error applying differential privacy.");
@@ -411,7 +421,8 @@ const DynamicSimulation = () => {
         fetchRiskScores();
       } else {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to calculate risk scores.");
+        console.error("Failed to calculate risk scores:", errorData.error);
+        setError("Failed to calculate risk scores.");
       }
     } catch (err) {
       setError("Error calculating risk scores.");
@@ -492,7 +503,8 @@ const DynamicSimulation = () => {
       if (response.ok) {
         setSuccessMessage("Simulation completed successfully.");
       } else {
-        setError(data.error || "An error occurred during the simulation.");
+        console.log("An error occurred during the simulation:", data.error);
+        setError("An error occurred during the simulation.");
       }
     } catch (err) {
       setError("Failed to communicate with the backend.");
